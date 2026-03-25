@@ -25,11 +25,11 @@ export default function Onboarding() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        router.push("/");
+        window.location.href = "/";
       }
     });
     return unsubscribe;
-  }, [router]);
+  }, []);
 
   const handleNext = () => {
     if (step < totalSteps) setStep(step + 1);
@@ -56,7 +56,7 @@ export default function Onboarding() {
             name: formData.name,
           }, { merge: true }); // Merge ensures we don't overwrite the streak!
         }
-        router.push("/dashboard"); 
+        window.location.href = "/dashboard"; 
       } else {
         console.error("Failed to submit to Sheets");
       }

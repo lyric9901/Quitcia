@@ -17,22 +17,30 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Check if user has completed onboarding
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists() && userDoc.data().name) {
-          router.push("/dashboard");
-        } else {
-          router.push("/onboarding");
+        try {
+          // Check if user has completed onboarding
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists() && userDoc.data().name) {
+            window.location.href = "/dashboard";
+          } else {
+            window.location.href = "/onboarding";
+          }
+        } catch (error) {
+          // If Firestore fails, assume not onboarded
+          window.location.href = "/onboarding";
         }
+      } else {
+        setLoading(false);
       }
     });
     return unsubscribe;
-  }, [router]);
+  }, []);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +51,8 @@ export default function Auth() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      // Redirect will happen via useEffect on auth state change
+      // Fallback redirect
+      window.location.href = "/onboarding";
     } catch (err: any) {
       setError(err.message);
     }
@@ -52,11 +61,20 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      // Redirect will happen via useEffect on auth state change
+      // Fallback redirect
+      window.location.href = "/onboarding";
     } catch (err: any) {
       setError(err.message);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full max-w-md p-8 mx-auto bg-white rounded-2xl shadow-lg">
+        <div className="text-slate-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-md p-8 mx-auto bg-white rounded-2xl shadow-lg">

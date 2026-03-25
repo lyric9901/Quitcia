@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, age, q1, q2, q3, q4 } = body;
+    const { name, age, q1, q2, q3, q4, q5_usedOtherTools, q6_toolFeedback } = body;
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -17,13 +17,23 @@ export async function POST(req: Request) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Append the row to Sheet1 (Change 'Sheet1' if you named your tab differently)
+    // Extended range to A1:I1 to accommodate the 2 new fields + timestamp
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Sheet1!A1:F1", 
+      range: "Sheet1!A1:I1", 
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[name, age, q1, q2, q3, q4, new Date().toISOString()]],
+        values: [[
+          name, 
+          age, 
+          q1, 
+          q2, 
+          q3, 
+          q4, 
+          q5_usedOtherTools || "No", // Failsafe fallback
+          q6_toolFeedback || "",     // Empty if they chose "No"
+          new Date().toISOString()
+        ]],
       },
     });
 
