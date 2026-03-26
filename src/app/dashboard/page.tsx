@@ -35,6 +35,7 @@ const TASKS = [
 
 interface Task { id: number; text: string; completed: boolean; }
 
+// --- UPDATED ORB MODAL ---
 const OrbModal = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
   useEffect(() => {
@@ -47,15 +48,18 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl"
+      // Applied your exact gradient here
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] backdrop-blur-xl"
     >
-      <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white z-50 p-3 bg-white/5 hover:bg-white/10 rounded-full backdrop-blur-md transition-all">
+      {/* Updated close button for light background */}
+      <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
       </button>
       <div className="flex flex-col items-center justify-center w-full h-full relative">
-        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-50 absolute" />
-        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.6)] z-10" />
-        <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 1.5 }} className="text-white/90 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">
+        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-40 absolute" />
+        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" />
+        {/* Updated text color for light background */}
+        <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 1.5 }} className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">
           Just stay here, forget everything.
         </motion.p>
       </div>
@@ -143,7 +147,6 @@ export default function DashboardPage() {
 
   if (isLoading) return <div className="h-[100dvh] bg-slate-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
-  // --- Animation Variants ---
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -154,12 +157,12 @@ export default function DashboardPage() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } }
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
   };
 
   return (
     <main className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative">
-      <motion.div
+      <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -174,9 +177,9 @@ export default function DashboardPage() {
 
         <div className="flex-1 px-5 pb-32 flex flex-col gap-5 max-w-md w-full mx-auto overflow-y-auto">
           <motion.div variants={itemVariants} className="shrink-0">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleMarkUrge}
+            <motion.button 
+              whileTap={{ scale: 0.98 }} 
+              onClick={handleMarkUrge} 
               className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-200/40 text-white font-bold text-lg tracking-wide"
             >
               Log an Urge
@@ -189,10 +192,10 @@ export default function DashboardPage() {
               <div className="relative flex items-center justify-center w-12 h-12">
                 <svg className="transform -rotate-90 w-12 h-12">
                   <circle cx="24" cy="24" r="18" stroke="#f1f5f9" strokeWidth="4" fill="transparent" />
-                  <motion.circle
-                    cx="24" cy="24" r="18" stroke="#3b82f6" strokeWidth="4" fill="transparent" strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    animate={{ strokeDashoffset: circumference - (progressPercent / 100) * circumference }}
+                  <motion.circle 
+                    cx="24" cy="24" r="18" stroke="#3b82f6" strokeWidth="4" fill="transparent" strokeLinecap="round" 
+                    strokeDasharray={circumference} 
+                    animate={{ strokeDashoffset: circumference - (progressPercent / 100) * circumference }} 
                     transition={{ type: "spring", stiffness: 60, damping: 15 }}
                   />
                 </svg>

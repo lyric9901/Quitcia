@@ -1,3 +1,4 @@
+// @/app/play-audio/page.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -6,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, X } from "lucide-react";
+import { getOfflineAudioUrl } from "@/lib/offlineAudio";
 
 const AUDIO_TRACKS = [
   "/audio/track1.mp3",
@@ -19,12 +21,27 @@ export default function PlayAudioPage() {
   const [progress, setProgress] = useState(0);
   const [showTime, setShowTime] = useState(false);
   const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
+  
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [hasLoggedSession, setHasLoggedSession] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    setAudioSrc(AUDIO_TRACKS[Math.floor(Math.random() * AUDIO_TRACKS.length)]);
+    let objectUrl = ""; 
+
+    const loadAudio = async () => {
+      const randomTrack = AUDIO_TRACKS[Math.floor(Math.random() * AUDIO_TRACKS.length)];
+      objectUrl = await getOfflineAudioUrl(randomTrack);
+      setAudioSrc(objectUrl);
+    };
+
+    loadAudio();
+
+    return () => {
+      if (objectUrl && objectUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
   }, []);
 
   const togglePlay = () => {
@@ -57,8 +74,10 @@ export default function PlayAudioPage() {
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <main className="flex flex-col items-center justify-center h-[100dvh] bg-slate-950 overflow-hidden relative selection:bg-transparent">
-      <button onClick={() => router.push("/dashboard")} className="absolute top-6 right-6 text-white/50 hover:text-white z-50 p-3 bg-white/5 rounded-full backdrop-blur-md transition-all">
+    // Applied gradient background here
+    <main className="flex flex-col items-center justify-center h-[100dvh] bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] overflow-hidden relative selection:bg-transparent">
+      {/* Updated close button to match light background */}
+      <button onClick={() => router.push("/dashboard")} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
       </button>
 
@@ -67,18 +86,34 @@ export default function PlayAudioPage() {
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center w-full h-full relative z-20">
         <div className="relative flex items-center justify-center mb-12">
           <div className="absolute inset-0 z-30 rounded-full cursor-pointer" onClick={() => { setShowTime(true); setTimeout(() => setShowTime(false), 2500); }} />
+          
           <svg className="transform -rotate-90 w-[280px] h-[280px]">
-            <circle cx="140" cy="140" r={radius} stroke="#1e293b" strokeWidth="8" fill="transparent" />
+            {/* Changed background ring from dark slate to light grey (slate-200) */}
+            <circle cx="140" cy="140" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
             <motion.circle cx="140" cy="140" r={radius} stroke={hasLoggedSession ? "#10b981" : "#3b82f6"} strokeWidth="8" fill="transparent" strokeLinecap="round" animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} style={{ strokeDasharray: circumference }} transition={{ ease: "linear", duration: 0.2 }} />
           </svg>
+          
           <div className="absolute z-40 flex flex-col items-center justify-center">
-            <button onClick={togglePlay} className="w-20 h-20 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10">
-              {isPlaying ? <Pause className="w-8 h-8 fill-white" /> : <Play className="w-8 h-8 fill-white ml-1" />}
+            {/* Made play button glassy white with dark icons */}
+            <button onClick={togglePlay} className="w-20 h-20 bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center text-slate-800 border border-slate-200 transition-all">
+              {isPlaying ? <Pause className="w-8 h-8 fill-slate-800 text-slate-800" /> : <Play className="w-8 h-8 fill-slate-800 text-slate-800 ml-1" />}
             </button>
-            <AnimatePresence>{showTime && <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute -bottom-12 text-slate-400 font-mono text-sm tracking-widest bg-slate-900/80 px-3 py-1 rounded-full">{currentTimeStr}</motion.span>}</AnimatePresence>
+            <AnimatePresence>
+              {showTime && (
+                <motion.span 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} 
+                  // Updated timer tooltip for light mode
+                  className="absolute -bottom-12 text-slate-700 font-bold font-mono text-sm tracking-widest bg-white/80 shadow-sm px-3 py-1 rounded-full"
+                >
+                  {currentTimeStr}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-        <p className={`text-sm tracking-widest uppercase mb-4 transition-colors duration-500 ${hasLoggedSession ? 'text-emerald-500 font-bold' : 'text-slate-500'}`}>
+        
+        {/* Updated text bottom text color */}
+        <p className={`text-sm tracking-widest uppercase mb-4 transition-colors duration-500 ${hasLoggedSession ? 'text-emerald-600 font-bold' : 'text-slate-500 font-medium'}`}>
           {hasLoggedSession ? "Session Recorded" : "Focus Mode Active"}
         </p>
       </motion.div>

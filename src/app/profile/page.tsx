@@ -15,10 +15,22 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState<string>("User");
   const [audioCount, setAudioCount] = useState<number>(0);
+  const [memberSince, setMemberSince] = useState<string>("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/"); return; }
+      
+      // 1. Format and set the Member Since date directly from Firebase Auth
+      if (user.metadata.creationTime) {
+        const creationDate = new Date(user.metadata.creationTime);
+        const formattedDate = creationDate.toLocaleDateString("en-US", { 
+          month: "short", 
+          year: "numeric" 
+        });
+        setMemberSince(`Member since ${formattedDate}`);
+      }
+
       await fetchUserData(user.uid);
       setIsLoading(false);
     });
@@ -27,14 +39,14 @@ export default function ProfilePage() {
 
   const fetchUserData = async (uid: string) => {
     try {
-      // 1. Fetch User Name
+      // 2. Fetch User Name from Firestore
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         setUserName(userSnap.data().name || "User");
       }
 
-      // 2. Fetch All-Time Audio Sessions Played
+      // 3. Fetch All-Time Audio Sessions Played
       const swmRef = collection(db, "users", uid, "swm_sessions");
       const swmSnap = await getDocs(swmRef);
       setAudioCount(swmSnap.size);
@@ -68,7 +80,16 @@ export default function ProfilePage() {
             <UserCircle className="w-12 h-12" strokeWidth={1.5} />
           </div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{userName}</h2>
-          <p className="text-slate-500 text-sm font-medium">{auth.currentUser?.email}</p>
+          <p className="text-slate-500 text-sm font-medium mb-3">{auth.currentUser?.email}</p>
+          
+          {/* Member Since Badge */}
+          {memberSince && (
+            <div className="bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full mt-1">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                {memberSince}
+              </span>
+            </div>
+          )}
         </motion.div>
 
         {/* Audio Stats Card */}
