@@ -21,7 +21,6 @@ export default function ProfilePage() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/"); return; }
       
-      // 1. Format and set the Member Since date directly from Firebase Auth
       if (user.metadata.creationTime) {
         const creationDate = new Date(user.metadata.creationTime);
         const formattedDate = creationDate.toLocaleDateString("en-US", { 
@@ -39,14 +38,12 @@ export default function ProfilePage() {
 
   const fetchUserData = async (uid: string) => {
     try {
-      // 2. Fetch User Name from Firestore
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         setUserName(userSnap.data().name || "User");
       }
 
-      // 3. Fetch All-Time Audio Sessions Played
       const swmRef = collection(db, "users", uid, "swm_sessions");
       const swmSnap = await getDocs(swmRef);
       setAudioCount(swmSnap.size);
@@ -72,7 +69,8 @@ export default function ProfilePage() {
         <h1 className="font-bold text-slate-800 text-lg">My Profile</h1>
       </motion.header>
 
-      <div className="flex-1 flex flex-col gap-6 max-w-md w-full mx-auto overflow-y-auto pb-32 mt-4">
+      {/* Added classes here to hide the scrollbar completely */}
+      <div className="flex-1 flex flex-col gap-6 max-w-md w-full mx-auto overflow-y-auto pb-32 mt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
         {/* User Card */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col items-center text-center">
@@ -82,7 +80,6 @@ export default function ProfilePage() {
           <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{userName}</h2>
           <p className="text-slate-500 text-sm font-medium mb-3">{auth.currentUser?.email}</p>
           
-          {/* Member Since Badge */}
           {memberSince && (
             <div className="bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full mt-1">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
