@@ -1,3 +1,4 @@
+// src/app/onboarding/page.tsx
 "use client";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -43,7 +44,7 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Try sending data to Google Sheets (We don't want this to block the user if it fails)
+      // 1. Send data to Google Sheets API
       try {
         const response = await fetch("/api/onboarding", {
           method: "POST",
@@ -51,33 +52,34 @@ export default function Onboarding() {
           body: JSON.stringify(formData),
         });
         
+        const data = await response.json();
         if (!response.ok) {
-          console.warn("Failed to submit to Sheets, but proceeding with onboarding...");
+          console.error("Sheets API failed:", data.error);
+        } else {
+          console.log("Successfully saved to Sheets!");
         }
       } catch (sheetError) {
-        console.error("Google Sheets Error:", sheetError);
+        console.error("Network error calling Sheets API:", sheetError);
       }
 
-      // 2. Save Name to Firebase for the app to use
+      // 2. Save Name to Firebase
       if (auth.currentUser) {
         await setDoc(doc(db, "users", auth.currentUser.uid), {
           name: formData.name,
-        }, { merge: true }); // Merge ensures we don't overwrite the streak!
+        }, { merge: true });
       }
       
-      // 3. ALWAYS redirect to dashboard, regardless of Sheets success
+      // 3. Redirect to dashboard
       router.push("/dashboard");
       
     } catch (error) {
       console.error("Error submitting form", error);
-      // Fallback redirect just in case
       router.push("/dashboard");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Helper component for rendering selectable option cards
   const OptionCard = ({ 
     label, 
     field, 
@@ -107,7 +109,6 @@ export default function Onboarding() {
     <div className="flex flex-col min-h-screen bg-slate-50 pt-8 pb-12 px-6">
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col">
         
-        {/* Header & Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {step > 1 ? (
@@ -115,7 +116,7 @@ export default function Onboarding() {
                 ← Back
               </button>
             ) : (
-              <div /> // Empty div to keep alignment
+              <div /> 
             )}
             <span className="text-xs font-bold text-slate-400 tracking-wider">
               STEP {step} OF {totalSteps}
@@ -129,7 +130,6 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Form Content */}
         <div className="flex-1">
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -244,7 +244,6 @@ export default function Onboarding() {
           )}
         </div>
 
-        {/* Footer Navigation */}
         <div className="pt-8 mt-auto">
           {step < totalSteps ? (
             <button 
