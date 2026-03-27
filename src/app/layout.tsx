@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 // --- ENHANCED GLOBAL SEO METADATA ---
 export const metadata: Metadata = {
   title: {
-    template: "%s | Quitcia",
-    default: "Quitcia - Rewire Your Habits",
+    template: "%s | Urge Relief",
+    default: "Urge Relief - Rewire Your Habits",
   },
   description:
     "Overcome urges, build better habits, and track your daily progress with scientifically-backed audio therapy and mindfulness.",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "mental health app",
     "quitcia",
   ],
-  authors: [{ name: "Neel" }],
+  authors: [{ name: "Shah Nawaz" }],
   creator: "Quitcia",
   manifest: "/manifest.json",
 
@@ -40,16 +40,16 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "Quitcia - Rewire Your Habits",
+    title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
-    url: "https://quitcia.com",
-    siteName: "Quitcia",
+    url: "https://urge-relief.in",
+    siteName: "Urge Relief",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Quitcia App Preview",
+        alt: "Urge Relief App Preview",
       },
     ],
     locale: "en_US",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Quitcia - Rewire Your Habits",
+    title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
     images: ["/og-image.jpg"],
   },
