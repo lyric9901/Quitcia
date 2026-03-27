@@ -16,10 +16,7 @@ export async function POST(req: Request) {
     let rawKey = process.env.GOOGLE_PRIVATE_KEY;
     
     // 1. Strip out any surrounding quotes that Vercel might have automatically added
-    rawKey = rawKey.replace(/^"|"$/g, ''); 
-    
-    // 2. Force convert literal "\n" strings into actual line breaks
-    const privateKey = rawKey.split('\\n').join('\n');
+   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {

@@ -46,11 +46,11 @@ export default function Onboarding() {
     try {
       // 1. Send data to Google Sheets API
       try {
-        const response = await fetch("/api/onboarding", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
+        await fetch("/api/onboarding", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(formData),
+});
         
         const data = await response.json();
         if (!response.ok) {
