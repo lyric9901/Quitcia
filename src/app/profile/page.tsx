@@ -6,9 +6,13 @@ import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, deleteUser } from "firebase/auth";
 import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
-import { LogOut, Headphones, UserCircle, Settings, AlertTriangle, X } from "lucide-react";
+import { 
+  LogOut, Headphones, UserCircle, Settings, 
+  AlertTriangle, X, AlertCircle, CheckCircle 
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -63,6 +67,9 @@ export default function ProfilePage() {
       router.push("/");
     } catch (error) {
       console.error("Sign out error", error);
+      toast.error("Failed to sign out", {
+        icon: <AlertCircle className="w-5 h-5 text-red-500" />
+      });
     }
   };
 
@@ -78,15 +85,28 @@ export default function ProfilePage() {
       // 2. Delete user auth record
       await deleteUser(user);
 
-      // 3. Redirect to login/onboarding
+      // 3. Explicitly sign out to clear any lingering local state
+      await signOut(auth);
+
+      toast.success("Account deleted successfully", {
+        icon: <CheckCircle className="w-5 h-5 text-green-500" />
+      });
+
+      // 4. Redirect to login/onboarding
       router.push("/");
     } catch (error: any) {
       console.error("Error deleting account:", error);
+      
       // Firebase requires recent authentication for sensitive actions like deletion
       if (error.code === 'auth/requires-recent-login') {
-        alert("Please sign out and sign back in to verify your identity before deleting your account.");
+        toast.error("Please sign out and sign back in to verify your identity before deleting.", {
+          icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+          duration: 5000,
+        });
       } else {
-        alert("An error occurred while deleting your account. Please try again.");
+        toast.error("An error occurred while deleting your account. Please try again.", {
+          icon: <AlertTriangle className="w-5 h-5 text-red-500" />
+        });
       }
     } finally {
       setIsDeleting(false);
