@@ -7,14 +7,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, age, q1, q2, q3, q4, q5_usedOtherTools, q6_toolFeedback } = body;
 
-    // 1. Verify environment variables exist so it doesn't crash silently
     if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID) {
       console.error("CRITICAL: Missing Google Environment Variables");
       return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
     }
 
-    // 2. Safely parse the private key
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n");
+    // 🔥 THE BULLETPROOF FIX 🔥
+    let rawKey = process.env.GOOGLE_PRIVATE_KEY;
+    
+    // 1. Strip out any surrounding quotes that Vercel might have automatically added
+    rawKey = rawKey.replace(/^"|"$/g, ''); 
+    
+    // 2. Force convert literal "\n" strings into actual line breaks
+    const privateKey = rawKey.split('\\n').join('\n');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -26,7 +31,6 @@ export async function POST(req: Request) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // 3. Append to the sheet (Using A:I appends to the next EMPTY row)
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: "Sheet1!A:I", 
