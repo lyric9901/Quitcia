@@ -17,42 +17,52 @@ const geistMono = Geist_Mono({
 // --- ENHANCED GLOBAL SEO METADATA ---
 export const metadata: Metadata = {
   title: {
-    template: "%s | Quitcia", // This automatically adds "| Quitcia" to page titles
-    default: "Quitcia - Rewire Your Habits", 
+    template: "%s | Urge Relief",
+    default: "Urge Relief - Rewire Your Habits",
   },
-  description: "Overcome urges, build better habits, and track your daily progress with scientifically-backed audio therapy and mindfulness.",
-  keywords: ["habit tracker", "addiction recovery", "mindfulness", "urge surfing", "mental health app", "quitcia"],
-  authors: [{ name: "Neel" }],
+  description:
+    "Overcome urges, build better habits, and track your daily progress with scientifically-backed audio therapy and mindfulness.",
+  keywords: [
+    "habit tracker",
+    "addiction recovery",
+    "mindfulness",
+    "urge surfing",
+    "mental health app",
+    "quitcia",
+  ],
+  authors: [{ name: "Shah Nawaz" }],
   creator: "Quitcia",
   manifest: "/manifest.json",
-  
-  // Open Graph (How it looks when shared on Facebook, LinkedIn, iMessage, WhatsApp)
+
+  // ✅ GOOGLE VERIFICATION ADDED (only this new part)
+  verification: {
+    google: "0XPrDPVrlqOU_umQNTDoeP-AUeNiwrhuZGAUl9Dvstg",
+  },
+
   openGraph: {
-    title: "Quitcia - Rewire Your Habits",
+    title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
-    url: "https://quitcia.com", // Replace with your actual live URL
-    siteName: "Quitcia",
+    url: "https://urge-relief.in",
+    siteName: "Urge Relief",
     images: [
       {
-        url: "/og-image.jpg", // Create a 1200x630 image and put it in your public folder
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Quitcia App Preview",
+        alt: "Urge Relief App Preview",
       },
     ],
     locale: "en_US",
     type: "website",
   },
-  
-  // Twitter Card (How it looks when shared on Twitter/X)
+
   twitter: {
     card: "summary_large_image",
-    title: "Quitcia - Rewire Your Habits",
+    title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
-    images: ["/og-image.jpg"], 
+    images: ["/og-image.jpg"],
   },
-  
-  // Tell Google to index the site
+
   robots: {
     index: true,
     follow: true,
