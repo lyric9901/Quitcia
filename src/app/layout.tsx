@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineManager from "@/components/OfflineManager";
-import { CSPostHogProvider } from "@/providers/PostHogProvider";
+
+// 1. Correctly importing PostHogProvider
+import { PostHogProvider } from "@/providers/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,6 +16,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// --- ENHANCED GLOBAL SEO METADATA ---
 export const metadata: Metadata = {
   title: {
     template: "%s | Urge Relief",
@@ -32,9 +35,12 @@ export const metadata: Metadata = {
   authors: [{ name: "Shah Nawaz" }],
   creator: "Quitcia",
   manifest: "/manifest.json",
+
+  // ✅ GOOGLE VERIFICATION ADDED
   verification: {
     google: "0XPrDPVrlqOU_umQNTDoeP-AUeNiwrhuZGAUl9Dvstg",
   },
+
   openGraph: {
     title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
@@ -51,12 +57,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
     title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
     images: ["/og-image.jpg"],
   },
+
   robots: {
     index: true,
     follow: true,
@@ -71,10 +79,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <CSPostHogProvider>
+        {/* 2. Correctly wrapping with PostHogProvider */}
+        <PostHogProvider>
           {children}
           <OfflineManager />
-        </CSPostHogProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

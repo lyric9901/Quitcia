@@ -1,18 +1,29 @@
-// @/src/providers/PostHogProvider.tsx
 'use client'
 
 import posthog from 'posthog-js'
-import { PostHogProvider } from 'posthog-js/react'
-import { useEffect } from 'react'
+import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
+// 1. Initialize PostHog OUTSIDE the component to prevent double-firing
 if (typeof window !== 'undefined') {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    person_profiles: 'identified_only', // Capture anonymous data initially
-    capture_pageview: false, // Disable automatic pageview capture, as we handle it manually in Next.js SPA
-  })
+  const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
+
+  // 2. Add a safety check so the app doesn't crash if the token is missing
+  if (token) {
+    posthog.init(token, {
+      api_host: host,
+      person_profiles: 'identified_only',
+      capture_pageview: false // Set to false if you plan to track pageviews manually in Next.js
+    })
+  } else {
+    console.warn("PostHog token is missing! Check your .env.local file.");
+  }
 }
 
-export function CSPostHogProvider({ children }: { children: React.ReactNode }) {
-  return <PostHogProvider client={posthog}>{children}</PostHogProvider>
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <PHProvider client={posthog}>
+      {children}
+    </PHProvider>
+  )
 }
