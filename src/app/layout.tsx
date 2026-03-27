@@ -4,12 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineManager from "@/components/OfflineManager";
 
-export const metadata = {
-  verification: {
-    google: "0XPrDPVrlqOU_umQNTDoeP-AUeNiwrhuZGAUl9Dvstg",
-  },
-};
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
