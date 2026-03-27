@@ -1,4 +1,4 @@
-// @/components/Onboarding.tsx
+// src/app/onboarding/page.tsx
 "use client";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -22,16 +22,16 @@ export default function Onboarding() {
     q6_toolFeedback: "",
   });
 
-  const totalSteps = 6; // Increased to 6 steps
+  const totalSteps = 6;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        window.location.href = "/";
+        router.push("/");
       }
     });
     return unsubscribe;
-  }, []);
+  }, [router]);
 
   const handleNext = () => {
     if (step < totalSteps) setStep(step + 1);
@@ -44,32 +44,42 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Send data to Google Sheets
-      const response = await fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        // 2. Save just the Name to Firebase for the app to use
-        if (auth.currentUser) {
-          await setDoc(doc(db, "users", auth.currentUser.uid), {
-            name: formData.name,
-          }, { merge: true }); // Merge ensures we don't overwrite the streak!
+      // 1. Send data to Google Sheets API
+      try {
+        const response = await fetch("/api/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Sheets API failed:", data.error);
+        } else {
+          console.log("Successfully saved to Sheets!");
         }
-        window.location.href = "/dashboard"; 
-      } else {
-        console.error("Failed to submit to Sheets");
+      } catch (sheetError) {
+        console.error("Network error calling Sheets API:", sheetError);
       }
+
+      // 2. Save Name to Firebase
+      if (auth.currentUser) {
+        await setDoc(doc(db, "users", auth.currentUser.uid), {
+          name: formData.name,
+        }, { merge: true });
+      }
+      
+      // 3. Redirect to dashboard
+      router.push("/dashboard");
+      
     } catch (error) {
       console.error("Error submitting form", error);
+      router.push("/dashboard");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Helper component for rendering selectable option cards
   const OptionCard = ({ 
     label, 
     field, 
@@ -99,7 +109,6 @@ export default function Onboarding() {
     <div className="flex flex-col min-h-screen bg-slate-50 pt-8 pb-12 px-6">
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col">
         
-        {/* Header & Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {step > 1 ? (
@@ -107,7 +116,7 @@ export default function Onboarding() {
                 ← Back
               </button>
             ) : (
-              <div /> // Empty div to keep alignment
+              <div /> 
             )}
             <span className="text-xs font-bold text-slate-400 tracking-wider">
               STEP {step} OF {totalSteps}
@@ -121,7 +130,6 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Form Content */}
         <div className="flex-1">
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -236,7 +244,6 @@ export default function Onboarding() {
           )}
         </div>
 
-        {/* Footer Navigation */}
         <div className="pt-8 mt-auto">
           {step < totalSteps ? (
             <button 

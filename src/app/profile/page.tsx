@@ -4,11 +4,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
-import { LogOut, Headphones, UserCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { onAuthStateChanged, signOut, deleteUser } from "firebase/auth";
+import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
+import { 
+  LogOut, Headphones, UserCircle, Settings, 
+  AlertTriangle, X, AlertCircle, CheckCircle 
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -16,6 +20,11 @@ export default function ProfilePage() {
   const [userName, setUserName] = useState<string>("User");
   const [audioCount, setAudioCount] = useState<number>(0);
   const [memberSince, setMemberSince] = useState<string>("");
+
+  // Modals state
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -58,6 +67,50 @@ export default function ProfilePage() {
       router.push("/");
     } catch (error) {
       console.error("Sign out error", error);
+      toast.error("Failed to sign out", {
+        icon: <AlertCircle className="w-5 h-5 text-red-500" />
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      // 1. Delete user data from Firestore DB
+      await deleteDoc(doc(db, "users", user.uid));
+
+      // 2. Delete user auth record
+      await deleteUser(user);
+
+      // 3. Explicitly sign out to clear any lingering local state
+      await signOut(auth);
+
+      toast.success("Account deleted successfully", {
+        icon: <CheckCircle className="w-5 h-5 text-green-500" />
+      });
+
+      // 4. Redirect to login/onboarding
+      router.push("/");
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      
+      // Firebase requires recent authentication for sensitive actions like deletion
+      if (error.code === 'auth/requires-recent-login') {
+        toast.error("Please sign out and sign back in to verify your identity before deleting.", {
+          icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+          duration: 5000,
+        });
+      } else {
+        toast.error("An error occurred while deleting your account. Please try again.", {
+          icon: <AlertTriangle className="w-5 h-5 text-red-500" />
+        });
+      }
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -65,11 +118,17 @@ export default function ProfilePage() {
 
   return (
     <main className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative px-6">
-      <motion.header initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="pt-10 pb-6 flex items-center justify-center shrink-0 max-w-md w-full mx-auto">
+      <motion.header initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="pt-10 pb-6 flex items-center justify-center shrink-0 max-w-md w-full mx-auto relative">
         <h1 className="font-bold text-slate-800 text-lg">My Profile</h1>
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="absolute right-0 text-slate-400 hover:text-slate-600 transition-colors p-2"
+        >
+          <Settings className="w-6 h-6" />
+        </button>
       </motion.header>
 
-      {/* Added classes here to hide the scrollbar completely */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col gap-6 max-w-md w-full mx-auto overflow-y-auto pb-32 mt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
         {/* User Card */}
@@ -114,6 +173,83 @@ export default function ProfilePage() {
       </div>
 
       <BottomNav />
+
+      {/* Settings Modal Overlay */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 z-[60] bg-slate-900/40 flex flex-col justify-end sm:justify-center sm:items-center px-4 pb-4 sm:pb-0 backdrop-blur-sm">
+            <motion.div 
+              initial={{ y: "100%", opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-slate-800">Settings</h2>
+                <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600 bg-slate-50 p-2 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <button 
+                onClick={() => { 
+                  setShowSettings(false); 
+                  setShowDeleteConfirm(true); 
+                }}
+                className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <AlertTriangle className="w-5 h-5" />
+                Delete Account
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal Overlay */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[70] bg-slate-900/60 flex items-center justify-center p-6 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-800 mb-2">Are you sure?</h2>
+              <p className="text-slate-500 text-sm mb-8 px-2 leading-relaxed">
+                This action is permanent and cannot be undone. All your progress, audio data, and account details will be wiped.
+              </p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl transition-colors"
+                  disabled={isDeleting}
+                >
+                  No, Cancel
+                </button>
+                <button 
+                  onClick={handleDeleteAccount}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "Yes, Delete"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </main>
   );
 }
