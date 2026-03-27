@@ -1,4 +1,3 @@
-// @/components/Onboarding.tsx
 "use client";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -22,16 +21,16 @@ export default function Onboarding() {
     q6_toolFeedback: "",
   });
 
-  const totalSteps = 6; // Increased to 6 steps
+  const totalSteps = 6;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        window.location.href = "/";
+        router.push("/");
       }
     });
     return unsubscribe;
-  }, []);
+  }, [router]);
 
   const handleNext = () => {
     if (step < totalSteps) setStep(step + 1);
@@ -44,26 +43,35 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Send data to Google Sheets
-      const response = await fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        // 2. Save just the Name to Firebase for the app to use
-        if (auth.currentUser) {
-          await setDoc(doc(db, "users", auth.currentUser.uid), {
-            name: formData.name,
-          }, { merge: true }); // Merge ensures we don't overwrite the streak!
+      // 1. Try sending data to Google Sheets (We don't want this to block the user if it fails)
+      try {
+        const response = await fetch("/api/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        
+        if (!response.ok) {
+          console.warn("Failed to submit to Sheets, but proceeding with onboarding...");
         }
-        window.location.href = "/dashboard"; 
-      } else {
-        console.error("Failed to submit to Sheets");
+      } catch (sheetError) {
+        console.error("Google Sheets Error:", sheetError);
       }
+
+      // 2. Save Name to Firebase for the app to use
+      if (auth.currentUser) {
+        await setDoc(doc(db, "users", auth.currentUser.uid), {
+          name: formData.name,
+        }, { merge: true }); // Merge ensures we don't overwrite the streak!
+      }
+      
+      // 3. ALWAYS redirect to dashboard, regardless of Sheets success
+      router.push("/dashboard");
+      
     } catch (error) {
       console.error("Error submitting form", error);
+      // Fallback redirect just in case
+      router.push("/dashboard");
     } finally {
       setIsSubmitting(false);
     }
