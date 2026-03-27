@@ -18,9 +18,11 @@ export default function Onboarding() {
     q2: "",
     q3: "",
     q4: "",
+    q5_usedOtherTools: "",
+    q6_toolFeedback: "",
   });
 
-  const totalSteps = 5;
+  const totalSteps = 6; // Increased to 6 steps
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -42,28 +44,28 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Save just the Name to Firebase first (this is very fast)
-      if (auth.currentUser) {
-        await setDoc(doc(db, "users", auth.currentUser.uid), {
-          name: formData.name,
-        }, { merge: true }); // Merge ensures we don't overwrite the streak!
-      }
-
-      // 2. Send data to Google Sheets in the background without waiting
-      // The keepalive flag ensures the browser finishes sending the data even as we navigate away
-      fetch("/api/onboarding", {
+      // 1. Send data to Google Sheets
+      const response = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-        keepalive: true, 
-      }).catch((error) => console.error("Failed to submit to Sheets in background", error));
+      });
 
-      // 3. Redirect instantly using Next.js router instead of a hard reload
-      router.push("/dashboard"); 
-
+      if (response.ok) {
+        // 2. Save just the Name to Firebase for the app to use
+        if (auth.currentUser) {
+          await setDoc(doc(db, "users", auth.currentUser.uid), {
+            name: formData.name,
+          }, { merge: true }); // Merge ensures we don't overwrite the streak!
+        }
+        window.location.href = "/dashboard"; 
+      } else {
+        console.error("Failed to submit to Sheets");
+      }
     } catch (error) {
       console.error("Error submitting form", error);
-      setIsSubmitting(false); // Only reset the button if a critical error happens
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,7 +76,7 @@ export default function Onboarding() {
     currentValue 
   }: { 
     label: string; 
-    field: "q1" | "q2" | "q3" | "q4"; 
+    field: "q1" | "q2" | "q3" | "q4" | "q5_usedOtherTools"; 
     currentValue: string 
   }) => {
     const isSelected = currentValue === label;
@@ -92,9 +94,6 @@ export default function Onboarding() {
       </button>
     );
   };
-
-  // Calculate progress percentage
-  const progress = ((step - 1) / totalSteps) * 100;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 pt-8 pb-12 px-6">
@@ -117,7 +116,7 @@ export default function Onboarding() {
           <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-blue-500 transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${((step - 1) / totalSteps) * 100}%` }}
             />
           </div>
         </div>
@@ -209,6 +208,32 @@ export default function Onboarding() {
               </div>
             </div>
           )}
+
+          {step === 6 && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+                Have you used other tools to help with this before?
+              </h1>
+              <div className="space-y-3 mb-6">
+                <OptionCard field="q5_usedOtherTools" currentValue={formData.q5_usedOtherTools} label="Yes" />
+                <OptionCard field="q5_usedOtherTools" currentValue={formData.q5_usedOtherTools} label="No" />
+              </div>
+
+              {formData.q5_usedOtherTools === "Yes" && (
+                <div className="animate-in fade-in duration-300">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    What made other tools feel like they didn't get you?
+                  </label>
+                  <textarea 
+                    placeholder="Type your thoughts..."
+                    value={formData.q6_toolFeedback}
+                    className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-base transition-colors min-h-[120px] resize-none"
+                    onChange={(e) => setFormData({...formData, q6_toolFeedback: e.target.value})}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer Navigation */}
@@ -220,7 +245,8 @@ export default function Onboarding() {
                 (step === 1 && (!formData.name || !formData.age)) ||
                 (step === 2 && !formData.q1) ||
                 (step === 3 && !formData.q2) ||
-                (step === 4 && !formData.q3)
+                (step === 4 && !formData.q3) ||
+                (step === 5 && !formData.q4)
               }
               className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-slate-200"
             >
@@ -229,7 +255,11 @@ export default function Onboarding() {
           ) : (
             <button 
               onClick={handleSubmit}
-              disabled={!formData.q4 || isSubmitting}
+              disabled={
+                !formData.q5_usedOtherTools || 
+                (formData.q5_usedOtherTools === "Yes" && !formData.q6_toolFeedback.trim()) || 
+                isSubmitting
+              }
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-200 flex justify-center items-center gap-2"
             >
               {isSubmitting ? "Building Profile..." : "Complete Setup"}
