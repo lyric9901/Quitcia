@@ -1,8 +1,8 @@
-// @/src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineManager from "@/components/OfflineManager";
+import { CSPostHogProvider } from "@/providers/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +14,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// --- ENHANCED GLOBAL SEO METADATA ---
 export const metadata: Metadata = {
   title: {
     template: "%s | Urge Relief",
@@ -33,12 +32,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Shah Nawaz" }],
   creator: "Quitcia",
   manifest: "/manifest.json",
-
-  // ✅ GOOGLE VERIFICATION ADDED (only this new part)
   verification: {
     google: "0XPrDPVrlqOU_umQNTDoeP-AUeNiwrhuZGAUl9Dvstg",
   },
-
   openGraph: {
     title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
@@ -55,14 +51,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
-
   twitter: {
     card: "summary_large_image",
     title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
     images: ["/og-image.jpg"],
   },
-
   robots: {
     index: true,
     follow: true,
@@ -77,8 +71,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <OfflineManager />
+        <CSPostHogProvider>
+          {children}
+          <OfflineManager />
+        </CSPostHogProvider>
       </body>
     </html>
   );

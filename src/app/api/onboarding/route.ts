@@ -3,6 +3,15 @@ import { google } from "googleapis";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+
+//Remove this nigga
+console.log("ENV CHECK:", {
+  email: process.env.GOOGLE_CLIENT_EMAIL,
+  hasKey: !!process.env.GOOGLE_PRIVATE_KEY,
+  sheet: process.env.GOOGLE_SHEET_ID
+});
+//till this motherfuckin line
+
   try {
     const body = await req.json();
     const { name, age, q1, q2, q3, q4, q5_usedOtherTools, q6_toolFeedback } = body;
