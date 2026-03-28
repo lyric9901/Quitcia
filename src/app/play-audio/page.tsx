@@ -24,6 +24,8 @@ export default function PlayAudioPage() {
   const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
   
   const [audioSrc, setAudioSrc] = useState<string>("");
+  const [trackName, setTrackName] = useState<string>("Unknown Track");
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [hasLoggedSession, setHasLoggedSession] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -31,7 +33,13 @@ export default function PlayAudioPage() {
     let objectUrl = ""; 
 
     const loadAudio = async () => {
+      // Pick a random track
       const randomTrack = AUDIO_TRACKS[Math.floor(Math.random() * AUDIO_TRACKS.length)];
+      
+      // Clean up the track name for marketing dashboards (e.g., "/audio/track1.mp3" -> "Track 1")
+      const cleanName = randomTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
+      setTrackName(cleanName);
+
       objectUrl = await getOfflineAudioUrl(randomTrack);
       setAudioSrc(objectUrl);
     };
@@ -47,8 +55,20 @@ export default function PlayAudioPage() {
 
   const togglePlay = () => {
     if (audioRef.current) {
-      if (isPlaying) audioRef.current.pause();
-      else audioRef.current.play();
+      if (isPlaying) {
+        audioRef.current.pause();
+        // Plain English tracking for pausing
+        posthog.capture('Audio Paused', { 'Track Name': trackName });
+      } else {
+        audioRef.current.play();
+        // Track the very first time they hit play versus resuming
+        if (!hasStartedPlaying) {
+          posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
+          setHasStartedPlaying(true);
+        } else {
+          posthog.capture('Audio Resumed', { 'Track Name': trackName });
+        }
+      }
       setIsPlaying(!isPlaying);
     }
   };
@@ -59,8 +79,15 @@ export default function PlayAudioPage() {
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
+      // 14 Second Milestone Marker
       if (current >= 14 && !hasLoggedSession && auth.currentUser) {
         setHasLoggedSession(true);
+        
+        // Let the marketing team know a session was successful
+        posthog.capture('Effective Session Milestone Reached (14s)', {
+          'Track Name': trackName
+        });
+
         try {
           await addDoc(collection(db, "users", auth.currentUser.uid, "swm_sessions"), {
             timestamp: serverTimestamp(),
@@ -73,19 +100,27 @@ export default function PlayAudioPage() {
 
   const handleExitAudio = () => {
     if (audioRef.current) {
-      posthog.capture('audio_quit_early', {
-        time_listened_seconds: Math.floor(audioRef.current.currentTime),
-        total_duration_seconds: Math.floor(audioRef.current.duration || 0),
-        percentage_completed: Math.floor(progress),
-        track_url: audioSrc
+      const timeListened = Math.floor(audioRef.current.currentTime);
+      const minutes = Math.floor(timeListened / 60);
+      const seconds = timeListened % 60;
+
+      // Highly detailed, readable exit tracking
+      posthog.capture('Audio Session Quit Early', {
+        'Track Name': trackName,
+        'Time Listened (Seconds)': timeListened,
+        'Time Listened (Readable)': `${minutes}m ${seconds}s`,
+        'Completion Percentage (%)': Math.floor(progress),
+        'Counted As Successful Session': timeListened >= 14 ? "Yes" : "No"
       });
     }
     router.push("/dashboard");
   };
 
   const handleAudioEnded = () => {
-    posthog.capture('audio_completed', {
-      track_url: audioSrc
+    // Tracking full completions
+    posthog.capture('Audio Session Fully Completed', {
+      'Track Name': trackName,
+      'Counted As Successful Session': "Yes"
     });
     router.push("/dashboard");
   };
