@@ -67,30 +67,6 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-const BreathingModal = ({ onClose }: { onClose: () => void }) => {
-  const [phase, setPhase] = useState<"Breathe In" | "Breathe Out">("Breathe In");
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPhase((prev) => (prev === "Breathe In" ? "Breathe Out" : "Breathe In"));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6">
-      <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 relative flex flex-col items-center justify-center min-h-[350px] shadow-2xl border border-slate-700">
-        <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-white z-10 p-2 bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-        <div className="relative flex items-center justify-center w-56 h-56 mt-4">
-          <motion.div className="absolute bg-blue-500 rounded-full blur-xl" animate={{ scale: phase === "Breathe In" ? 1.4 : 0.8, opacity: phase === "Breathe In" ? 0.3 : 0.1 }} transition={{ duration: 4, ease: "easeInOut" }} style={{ width: "100%", height: "100%" }} />
-          <motion.div className="absolute bg-blue-500 rounded-full shadow-2xl flex items-center justify-center" animate={{ scale: phase === "Breathe In" ? 1.1 : 0.85 }} transition={{ duration: 4, ease: "easeInOut" }} style={{ width: "70%", height: "70%" }}>
-            <motion.h2 key={phase} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="text-white font-bold tracking-widest text-center absolute">{phase}</motion.h2>
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -169,7 +145,7 @@ export default function DashboardPage() {
         className="flex flex-col h-full w-full"
       >
         <motion.header variants={itemVariants} className="px-5 pt-10 pb-4 flex items-center justify-between shrink-0 max-w-md w-full mx-auto">
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Today</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">       </h1>
           <button onClick={() => router.push("/profile")} className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
             <User className="w-5 h-5" />
           </button>
@@ -177,18 +153,31 @@ export default function DashboardPage() {
 
         <div className="flex-1 px-5 pb-32 flex flex-col gap-5 max-w-md w-full mx-auto overflow-y-auto">
           <motion.div variants={itemVariants} className="shrink-0">
-            <motion.button 
-              whileTap={{ scale: 0.98 }} 
-              onClick={handleMarkUrge} 
-              className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-200/40 text-white font-bold text-lg tracking-wide"
-            >
-              Log an Urge
-            </motion.button>
-          </motion.div>
+  <motion.button 
+    whileTap={{ scale: 0.98 }} 
+    onClick={handleMarkUrge} 
+    className="w-full py-4 rounded-[1.27rem] text-white font-bold text-lg tracking-wide relative overflow-hidden"
+    style={{
+      background: "linear-gradient(to right, #F9A12A, #F57C00)",
+      boxShadow: "0 0 20px rgba(245, 124, 0, 0.15)"
+    }}
+  >
+    {/* top highlight */}
+    <span 
+      className="absolute top-0 left-0 w-full h-1/2 pointer-events-none"
+      style={{
+        background: "linear-gradient(to bottom, #FFC56E, transparent)",
+        opacity: 0.4
+      }}
+    />
 
-          <motion.div variants={itemVariants} className="bg-white rounded-[1.5rem] p-4 shadow-sm border border-slate-100 w-full flex flex-col">
+    Urges Preset
+  </motion.button>
+            </motion.div>
+
+          <motion.div variants={itemVariants} className="bg-white rounded-[1.6rem] p-4 shadow-sm border border-slate-100 w-full flex flex-col">
             <div className="flex justify-between items-center mb-4 px-1">
-              <h2 className="text-lg font-extrabold text-slate-800">Daily Relief Tasks</h2>
+              <h2 className="text-lg font-extrabold text-slate-800">Daily Challenges</h2>
               <div className="relative flex items-center justify-center w-12 h-12">
                 <svg className="transform -rotate-90 w-12 h-12">
                   <circle cx="24" cy="24" r="18" stroke="#f1f5f9" strokeWidth="4" fill="transparent" />
@@ -213,25 +202,13 @@ export default function DashboardPage() {
               ))}
             </div>
           </motion.div>
-
-          <motion.div variants={itemVariants} className="w-full shrink-0">
-            <button onClick={() => setActiveModal("breathing")} className="w-full bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-              <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-                <Wind className="w-5 h-5 text-blue-500" />
-              </div>
-              <div className="text-left">
-                <span className="block font-bold text-slate-800 text-sm">Breathing Exercise</span>
-                <span className="text-xs text-slate-500 font-medium">Reset your nervous system</span>
-              </div>
-            </button>
-          </motion.div>
         </div>
       </motion.div>
 
       <BottomNav />
 
       <AnimatePresence>
-        {activeModal === "breathing" && <BreathingModal onClose={() => setActiveModal("none")} />}
+
         {activeModal === "orb" && <OrbModal onClose={() => setActiveModal("none")} />}
       </AnimatePresence>
     </main>
