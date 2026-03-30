@@ -95,9 +95,14 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const toggleTask = (taskId: number) => {
+  // Changed from toggleTask to completeTask
+  const completeTask = (taskId: number) => {
     setDailyTasks(prev => {
-      const updated = prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
+      // Check if the task is already completed to prevent unselecting
+      const isAlreadyCompleted = prev.find(t => t.id === taskId)?.completed;
+      if (isAlreadyCompleted) return prev;
+
+      const updated = prev.map(t => t.id === taskId ? { ...t, completed: true } : t);
       localStorage.setItem("dailyTasks", JSON.stringify(updated));
       return updated;
     });
@@ -146,34 +151,39 @@ export default function DashboardPage() {
       >
         <motion.header variants={itemVariants} className="px-5 pt-10 pb-4 flex items-center justify-between shrink-0 max-w-md w-full mx-auto">
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">       </h1>
-          <button onClick={() => router.push("/profile")} className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
+          {/* Added Framer Motion to the profile button for the tap animation */}
+          <motion.button 
+            whileTap={{ scale: 0.85 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={() => router.push("/profile")} 
+            className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors"
+          >
             <User className="w-5 h-5" />
-          </button>
+          </motion.button>
         </motion.header>
 
         <div className="flex-1 px-5 pb-32 flex flex-col gap-5 max-w-md w-full mx-auto overflow-y-auto">
           <motion.div variants={itemVariants} className="shrink-0">
-  <motion.button 
-    whileTap={{ scale: 0.98 }} 
-    onClick={handleMarkUrge} 
-    className="w-full py-4 rounded-[1.27rem] text-white font-bold text-lg tracking-wide relative overflow-hidden"
-    style={{
-      background: "linear-gradient(to right, #F9A12A, #F57C00)",
-      boxShadow: "0 0 20px rgba(245, 124, 0, 0.15)"
-    }}
-  >
-    {/* top highlight */}
-    <span 
-      className="absolute top-0 left-0 w-full h-1/2 pointer-events-none"
-      style={{
-        background: "linear-gradient(to bottom, #FFC56E, transparent)",
-        opacity: 0.4
-      }}
-    />
-
-    Urges Preset
-  </motion.button>
-            </motion.div>
+            <motion.button 
+              whileTap={{ scale: 0.98 }} 
+              onClick={handleMarkUrge} 
+              className="w-full py-4 rounded-[1.27rem] text-white font-bold text-lg tracking-wide relative overflow-hidden"
+              style={{
+                background: "linear-gradient(to right, #F9A12A, #F57C00)",
+                boxShadow: "0 0 20px rgba(245, 124, 0, 0.15)"
+              }}
+            >
+              {/* top highlight */}
+              <span 
+                className="absolute top-0 left-0 w-full h-1/2 pointer-events-none"
+                style={{
+                  background: "linear-gradient(to bottom, #FFC56E, transparent)",
+                  opacity: 0.4
+                }}
+              />
+              Urges Preset
+            </motion.button>
+          </motion.div>
 
           <motion.div variants={itemVariants} className="bg-white rounded-[1.6rem] p-4 shadow-sm border border-slate-100 w-full flex flex-col">
             <div className="flex justify-between items-center mb-4 px-1">
@@ -193,7 +203,16 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-2">
               {dailyTasks.map((task) => (
-                <button key={task.id} onClick={() => toggleTask(task.id)} className={`w-full flex items-center p-3 rounded-xl border transition-all ${task.completed ? 'bg-slate-50 border-slate-200 text-slate-400 line-through' : 'bg-white border-slate-100 hover:border-blue-200 text-slate-700'}`}>
+                <button 
+                  key={task.id} 
+                  onClick={() => completeTask(task.id)} 
+                  disabled={task.completed} // Prevents native click behavior when completed
+                  className={`w-full flex items-center p-3 rounded-xl border transition-all ${
+                    task.completed 
+                      ? 'bg-slate-50 border-slate-200 text-slate-400 line-through cursor-default' // Added cursor-default so it doesn't look clickable
+                      : 'bg-white border-slate-100 hover:border-blue-200 text-slate-700 cursor-pointer'
+                  }`}
+                >
                   <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center transition-colors ${task.completed ? 'bg-green-500 text-white' : 'bg-slate-100 border-2 border-slate-200'}`}>
                     <Check className="w-3 h-3" strokeWidth={3} />
                   </div>
@@ -208,7 +227,6 @@ export default function DashboardPage() {
       <BottomNav />
 
       <AnimatePresence>
-
         {activeModal === "orb" && <OrbModal onClose={() => setActiveModal("none")} />}
       </AnimatePresence>
     </main>
