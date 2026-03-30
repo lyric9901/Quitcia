@@ -44,39 +44,35 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Send data to Google Sheets API
-      try {
-        await fetch("/api/onboarding", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(formData),
-});
-        
-        const data = await response.json();
-        if (!response.ok) {
+      // 1. Send data to Google Sheets API (Fire and forget - do NOT await so flow is instant)
+      fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json();
           console.error("Sheets API failed:", data.error);
         } else {
           console.log("Successfully saved to Sheets!");
         }
-      } catch (sheetError) {
-        console.error("Network error calling Sheets API:", sheetError);
-      }
+      })
+      .catch((err) => console.error("Network error calling Sheets API:", err));
 
-      // 2. Save Name to Firebase
+      // 2. Save Name to Firebase (We await this so it's ready for the dashboard)
       if (auth.currentUser) {
         await setDoc(doc(db, "users", auth.currentUser.uid), {
           name: formData.name,
         }, { merge: true });
       }
       
-      // 3. Redirect to dashboard
+      // 3. Redirect to dashboard immediately without waiting for sheets!
       router.push("/dashboard");
       
     } catch (error) {
       console.error("Error submitting form", error);
       router.push("/dashboard");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
