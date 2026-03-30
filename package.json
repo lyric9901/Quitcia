@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx cap sync",
+    "build": "next build",
+    "build:mobile": "next build && npx cap sync",
     "start": "next start",
     "lint": "next lint"
   },

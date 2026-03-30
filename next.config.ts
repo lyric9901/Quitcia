@@ -7,19 +7,13 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  output: "export",
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true, 
   },
-  turbopack: {},
   eslint: {
-    // This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // This allows production builds to successfully complete even if
-    // your project has type errors.
     ignoreBuildErrors: true,
   },
 };
