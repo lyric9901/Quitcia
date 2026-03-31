@@ -90,7 +90,8 @@ export default function Onboarding() {
       <button
         type="button"
         onClick={() => setFormData({ ...formData, [field]: label })}
-        className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-200 ${
+        // Reduced padding from p-4 to p-3.5 and text size to text-sm
+        className={`w-full p-3.5 text-sm text-left rounded-xl border-2 transition-all duration-200 ${
           isSelected 
             ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold shadow-sm" 
             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
@@ -102,23 +103,25 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 pt-8 pb-12 px-6">
-      <div className="max-w-md w-full mx-auto flex-1 flex flex-col">
+    // Reduced outer padding
+    <div className="flex flex-col min-h-screen bg-slate-50 pt-6 pb-8 px-5">
+      <div className="max-w-sm w-full mx-auto flex-1 flex flex-col">
         
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        {/* Reduced margin bottom from mb-8 to mb-6 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
             {step > 1 ? (
-              <button onClick={handleBack} className="text-slate-400 hover:text-slate-600 font-medium text-sm flex items-center gap-1">
+              <button onClick={handleBack} className="text-slate-400 hover:text-slate-600 font-medium text-xs flex items-center gap-1">
                 ← Back
               </button>
             ) : (
               <div /> 
             )}
-            <span className="text-xs font-bold text-slate-400 tracking-wider">
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider">
               STEP {step} OF {totalSteps}
             </span>
           </div>
-          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-blue-500 transition-all duration-500 ease-out"
               style={{ width: `${((step - 1) / totalSteps) * 100}%` }}
@@ -129,27 +132,28 @@ export default function Onboarding() {
         <div className="flex-1">
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">Let's get to know you.</h1>
-              <p className="text-slate-500 mb-8">This helps us personalize your relief strategies.</p>
+              {/* Reduced text sizes and margins */}
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">Let's get to know you.</h1>
+              <p className="text-slate-500 text-sm mb-6">This helps us personalize your relief strategies.</p>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">What should we call you?</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">What should we call you?</label>
                   <input 
                     type="text" 
                     placeholder="Your name"
                     value={formData.name}
-                    className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-lg transition-colors"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-base transition-colors"
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">How old are you?</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">How old are you?</label>
                   <input 
                     type="number" 
                     placeholder="Age"
                     value={formData.age}
-                    className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-lg transition-colors"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-base transition-colors"
                     onChange={(e) => setFormData({...formData, age: e.target.value})}
                   />
                 </div>
@@ -159,10 +163,10 @@ export default function Onboarding() {
 
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+              <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
                 How long has this behavior been a loop you’ve wanted to break?
               </h1>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <OptionCard field="q1" currentValue={formData.q1} label="Under 1 year" />
                 <OptionCard field="q1" currentValue={formData.q1} label="1-3 years" />
                 <OptionCard field="q1" currentValue={formData.q1} label="3-5 years" />
@@ -173,10 +177,10 @@ export default function Onboarding() {
 
           {step === 3 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+              <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
                 When an urge hits, what is your current go-to move to stay grounded?
               </h1>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <OptionCard field="q2" currentValue={formData.q2} label="Physical activity" />
                 <OptionCard field="q2" currentValue={formData.q2} label="Digital distraction" />
                 <OptionCard field="q2" currentValue={formData.q2} label="Mindfulness" />
@@ -187,10 +191,10 @@ export default function Onboarding() {
 
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+              <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
                 How well does that current move actually help you manage the feeling long term?
               </h1>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <OptionCard field="q3" currentValue={formData.q3} label="Works perfectly" />
                 <OptionCard field="q3" currentValue={formData.q3} label="Helps for a while" />
                 <OptionCard field="q3" currentValue={formData.q3} label="Just a distraction" />
@@ -201,10 +205,10 @@ export default function Onboarding() {
 
           {step === 5 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+              <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
                 Let us know why you want to quit?
               </h1>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <OptionCard field="q4" currentValue={formData.q4} label="Damaging my relationship" />
                 <OptionCard field="q4" currentValue={formData.q4} label="Losing self control" />
                 <OptionCard field="q4" currentValue={formData.q4} label="Affecting my productivity" />
@@ -215,23 +219,23 @@ export default function Onboarding() {
 
           {step === 6 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h1 className="text-2xl font-bold text-slate-800 mb-8 leading-tight">
+              <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
                 Have you used other tools to help with this before?
               </h1>
-              <div className="space-y-3 mb-6">
+              <div className="space-y-2.5 mb-5">
                 <OptionCard field="q5_usedOtherTools" currentValue={formData.q5_usedOtherTools} label="Yes" />
                 <OptionCard field="q5_usedOtherTools" currentValue={formData.q5_usedOtherTools} label="No" />
               </div>
 
               {formData.q5_usedOtherTools === "Yes" && (
                 <div className="animate-in fade-in duration-300">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     What made other tools feel like they didn't get you?
                   </label>
                   <textarea 
                     placeholder="Type your thoughts..."
                     value={formData.q6_toolFeedback}
-                    className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-base transition-colors min-h-[120px] resize-none"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none text-sm transition-colors min-h-[100px] resize-none"
                     onChange={(e) => setFormData({...formData, q6_toolFeedback: e.target.value})}
                   />
                 </div>
@@ -240,7 +244,7 @@ export default function Onboarding() {
           )}
         </div>
 
-        <div className="pt-8 mt-auto">
+        <div className="pt-6 mt-auto">
           {step < totalSteps ? (
             <button 
               onClick={handleNext}
@@ -251,7 +255,8 @@ export default function Onboarding() {
                 (step === 4 && !formData.q3) ||
                 (step === 5 && !formData.q4)
               }
-              className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-slate-200"
+              // Reduced py-4 to py-3.5
+              className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-slate-200 text-sm"
             >
               Continue
             </button>
@@ -263,7 +268,7 @@ export default function Onboarding() {
                 (formData.q5_usedOtherTools === "Yes" && !formData.q6_toolFeedback.trim()) || 
                 isSubmitting
               }
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-200 flex justify-center items-center gap-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200 flex justify-center items-center gap-2 text-sm"
             >
               {isSubmitting ? "Building Profile..." : "Complete Setup"}
             </button>

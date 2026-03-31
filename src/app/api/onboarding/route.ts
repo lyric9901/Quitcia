@@ -12,10 +12,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
     }
 
-    // 1. Strip out any surrounding quotes that Vercel might have automatically added
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY
-      ?.replace(/\\n/g, '\n')
-      ?.replace(/"/g, '');
+    // 🟢 THE ULTIMATE PRIVATE KEY FIX 🟢
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    
+    // 1. Remove surrounding quotes if Vercel added them
+    privateKey = privateKey.replace(/^"|"$/g, '');
+    
+    // 2. Fix literal \n characters to be actual multi-line breaks
+    privateKey = privateKey.split('\\n').join('\n');
+    
+    // 3. Clean up any accidental leading/trailing whitespace
+    privateKey = privateKey.trim();
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
