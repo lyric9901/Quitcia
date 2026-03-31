@@ -134,7 +134,7 @@ export default function Onboarding() {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Reduced text sizes and margins */}
               <h1 className="text-2xl font-bold text-slate-800 mb-2">Let's get to know you.</h1>
-              <p className="text-slate-500 text-sm mb-6">This helps us personalize your relief strategies.</p>
+              <p className="text-slate-500 text-sm mb-6">This helps us personalize your experience.</p>
               
               <div className="space-y-4">
                 <div>
@@ -164,7 +164,7 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                How long has this behavior been a loop you’ve wanted to break?
+                How long have you been dealing with this behavior?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q1" currentValue={formData.q1} label="Under 1 year" />
@@ -178,7 +178,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                When an urge hits, what is your current go-to move to stay grounded?
+                How do you currently handle urges?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q2" currentValue={formData.q2} label="Physical activity" />
@@ -192,7 +192,7 @@ export default function Onboarding() {
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                How well does that current move actually help you manage the feeling long term?
+                How well does that usually work for you?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q3" currentValue={formData.q3} label="Works perfectly" />
@@ -206,7 +206,7 @@ export default function Onboarding() {
           {step === 5 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                Let us know why you want to quit?
+                What is your main reason for quitting?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q4" currentValue={formData.q4} label="Damaging my relationship" />
