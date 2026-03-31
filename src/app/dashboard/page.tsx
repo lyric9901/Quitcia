@@ -9,6 +9,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { Wind, User, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import { usePostHog } from 'posthog-js/react';
 
 const TASKS = [
   "Drink a full glass of water",
@@ -38,27 +39,36 @@ interface Task { id: number; text: string; completed: boolean; }
 // --- UPDATED ORB MODAL ---
 const OrbModal = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
+  
   useEffect(() => {
+    // Timer updated to 8 seconds to match one full expand/contract cycle
     const timer = setTimeout(() => {
       router.push("/play-audio");
-    }, 13000);
+    }, 8000); 
     return () => clearTimeout(timer);
   }, [router]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      // Applied your exact gradient here
       className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] backdrop-blur-xl"
     >
-      {/* Updated close button for light background */}
       <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
       </button>
       <div className="flex flex-col items-center justify-center w-full h-full relative">
-        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-40 absolute" />
-        <motion.div initial={{ scale: 1.0 }} animate={{ scale: 1.35 }} transition={{ duration: 13, ease: "easeInOut" }} className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" />
-        {/* Updated text color for light background */}
+        {/* Changed to an 8-second expand/contract loop */}
+        <motion.div 
+          animate={{ scale: [1.0, 1.35, 1.0] }} 
+          transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }} 
+          className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-40 absolute" 
+        />
+        <motion.div 
+          animate={{ scale: [1.0, 1.35, 1.0] }} 
+          transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }} 
+          className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" 
+        />
+        
         <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 1.5 }} className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">
           Just stay here, forget everything.
         </motion.p>
@@ -69,6 +79,7 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const posthog = usePostHog();
   const [isLoading, setIsLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<"none" | "breathing" | "orb">("none");
   const [dailyTasks, setDailyTasks] = useState<Task[]>([]);
@@ -95,10 +106,8 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Changed from toggleTask to completeTask
   const completeTask = (taskId: number) => {
     setDailyTasks(prev => {
-      // Check if the task is already completed to prevent unselecting
       const isAlreadyCompleted = prev.find(t => t.id === taskId)?.completed;
       if (isAlreadyCompleted) return prev;
 
@@ -109,6 +118,12 @@ export default function DashboardPage() {
   };
 
   const handleMarkUrge = async () => {
+    // PostHog Tracking for Intent
+    posthog.capture('Urges Preset Clicked', {
+      intent: 'Immediate Relief Required',
+      active_tasks_completed: dailyTasks.filter(t => t.completed).length
+    });
+
     if (auth.currentUser) {
       try {
         const urgesRef = collection(db, "users", auth.currentUser.uid, "urges");
@@ -151,7 +166,6 @@ export default function DashboardPage() {
       >
         <motion.header variants={itemVariants} className="px-5 pt-10 pb-4 flex items-center justify-between shrink-0 max-w-md w-full mx-auto">
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">       </h1>
-          {/* Added Framer Motion to the profile button for the tap animation */}
           <motion.button 
             whileTap={{ scale: 0.85 }}
             whileHover={{ scale: 1.05 }}
@@ -173,7 +187,6 @@ export default function DashboardPage() {
                 boxShadow: "0 0 20px rgba(245, 124, 0, 0.15)"
               }}
             >
-              {/* top highlight */}
               <span 
                 className="absolute top-0 left-0 w-full h-1/2 pointer-events-none"
                 style={{
@@ -206,10 +219,10 @@ export default function DashboardPage() {
                 <button 
                   key={task.id} 
                   onClick={() => completeTask(task.id)} 
-                  disabled={task.completed} // Prevents native click behavior when completed
+                  disabled={task.completed}
                   className={`w-full flex items-center p-3 rounded-xl border transition-all ${
                     task.completed 
-                      ? 'bg-slate-50 border-slate-200 text-slate-400 line-through cursor-default' // Added cursor-default so it doesn't look clickable
+                      ? 'bg-slate-50 border-slate-200 text-slate-400 line-through cursor-default' 
                       : 'bg-white border-slate-100 hover:border-blue-200 text-slate-700 cursor-pointer'
                   }`}
                 >

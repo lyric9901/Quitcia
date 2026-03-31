@@ -26,17 +26,28 @@ export default function PlayAudioPage() {
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [trackName, setTrackName] = useState<string>("Unknown Track");
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
-  const [hasLoggedSession, setHasLoggedSession] = useState(false);
+  
+  // Split Milestones
+  const [logged30s, setLogged30s] = useState(false);
+  const [logged60s, setLogged60s] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     let objectUrl = ""; 
 
     const loadAudio = async () => {
-      // Pick a random track
-      const randomTrack = AUDIO_TRACKS[Math.floor(Math.random() * AUDIO_TRACKS.length)];
+      // --- ANTI-REPEAT ALGORITHM ---
+      const lastTrack = localStorage.getItem("lastPlayedTrack");
+      let availableTracks = AUDIO_TRACKS.filter(track => track !== lastTrack);
       
-      // Clean up the track name for marketing dashboards (e.g., "/audio/track1.mp3" -> "Track 1")
+      // Fallback in case all tracks are filtered out (shouldn't happen with 3 tracks)
+      if (availableTracks.length === 0) availableTracks = AUDIO_TRACKS;
+      
+      const randomTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      localStorage.setItem("lastPlayedTrack", randomTrack);
+      
+      // Clean up the track name for marketing dashboards
       const cleanName = randomTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
       setTrackName(cleanName);
 
@@ -57,11 +68,9 @@ export default function PlayAudioPage() {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
-        // Plain English tracking for pausing
         posthog.capture('Audio Paused', { 'Track Name': trackName });
       } else {
         audioRef.current.play();
-        // Track the very first time they hit play versus resuming
         if (!hasStartedPlaying) {
           posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
           setHasStartedPlaying(true);
@@ -79,19 +88,28 @@ export default function PlayAudioPage() {
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
-      // 14 Second Milestone Marker
-      if (current >= 14 && !hasLoggedSession && auth.currentUser) {
-        setHasLoggedSession(true);
-        
-        // Let the marketing team know a session was successful
-        posthog.capture('Effective Session Milestone Reached (14s)', {
-          'Track Name': trackName
-        });
+      // 30 Second Milestone (All-Time)
+      if (current >= 30 && !logged30s && auth.currentUser) {
+        setLogged30s(true);
+        posthog.capture('All-Time Milestone Reached (30s)', { 'Track Name': trackName });
 
         try {
           await addDoc(collection(db, "users", auth.currentUser.uid, "swm_sessions"), {
             timestamp: serverTimestamp(),
-            type: "SWM_start"
+            type: "SWM_milestone_30s"
+          });
+        } catch (error) { console.error("Logging error", error); }
+      }
+
+      // 60 Second Milestone (Daily Progress)
+      if (current >= 60 && !logged60s && auth.currentUser) {
+        setLogged60s(true);
+        posthog.capture('Daily Progress Milestone Reached (60s)', { 'Track Name': trackName });
+
+        try {
+          await addDoc(collection(db, "users", auth.currentUser.uid, "swm_sessions"), {
+            timestamp: serverTimestamp(),
+            type: "SWM_milestone_60s"
           });
         } catch (error) { console.error("Logging error", error); }
       }
@@ -104,20 +122,19 @@ export default function PlayAudioPage() {
       const minutes = Math.floor(timeListened / 60);
       const seconds = timeListened % 60;
 
-      // Highly detailed, readable exit tracking
       posthog.capture('Audio Session Quit Early', {
         'Track Name': trackName,
         'Time Listened (Seconds)': timeListened,
         'Time Listened (Readable)': `${minutes}m ${seconds}s`,
         'Completion Percentage (%)': Math.floor(progress),
-        'Counted As Successful Session': timeListened >= 14 ? "Yes" : "No"
+        'Hit 30s Milestone': timeListened >= 30 ? "Yes" : "No",
+        'Hit 60s Milestone': timeListened >= 60 ? "Yes" : "No"
       });
     }
     router.push("/dashboard");
   };
 
   const handleAudioEnded = () => {
-    // Tracking full completions
     posthog.capture('Audio Session Fully Completed', {
       'Track Name': trackName,
       'Counted As Successful Session': "Yes"
@@ -127,6 +144,9 @@ export default function PlayAudioPage() {
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
+
+  // Visual state uses the 30s mark as the baseline for "recorded"
+  const isVisuallyRecorded = logged30s; 
 
   return (
     <main className="flex flex-col items-center justify-center h-[100dvh] bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] overflow-hidden relative selection:bg-transparent">
@@ -142,7 +162,7 @@ export default function PlayAudioPage() {
           
           <svg className="transform -rotate-90 w-[280px] h-[280px]">
             <circle cx="140" cy="140" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
-            <motion.circle cx="140" cy="140" r={radius} stroke={hasLoggedSession ? "#10b981" : "#3b82f6"} strokeWidth="8" fill="transparent" strokeLinecap="round" animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} style={{ strokeDasharray: circumference }} transition={{ ease: "linear", duration: 0.2 }} />
+            <motion.circle cx="140" cy="140" r={radius} stroke={isVisuallyRecorded ? "#10b981" : "#3b82f6"} strokeWidth="8" fill="transparent" strokeLinecap="round" animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} style={{ strokeDasharray: circumference }} transition={{ ease: "linear", duration: 0.2 }} />
           </svg>
           
           <div className="absolute z-40 flex flex-col items-center justify-center">
@@ -162,8 +182,8 @@ export default function PlayAudioPage() {
           </div>
         </div>
         
-        <p className={`text-sm tracking-widest uppercase mb-4 transition-colors duration-500 ${hasLoggedSession ? 'text-emerald-600 font-bold' : 'text-slate-500 font-medium'}`}>
-          {hasLoggedSession ? "Session Recorded" : "Focus Mode Active"}
+        <p className={`text-sm tracking-widest uppercase mb-4 transition-colors duration-500 ${isVisuallyRecorded ? 'text-emerald-600 font-bold' : 'text-slate-500 font-medium'}`}>
+          {isVisuallyRecorded ? "Session Recorded" : "Focus Mode Active"}
         </p>
       </motion.div>
     </main>
