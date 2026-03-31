@@ -194,7 +194,7 @@ export default function DashboardPage() {
                   opacity: 0.4
                 }}
               />
-              Urges Preset
+              Urges Present
             </motion.button>
           </motion.div>
 

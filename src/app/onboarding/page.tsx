@@ -34,6 +34,7 @@ export default function Onboarding() {
   }, [router]);
 
   const handleNext = () => {
+    // The error was here: missing the '<' operator
     if (step < totalSteps) setStep(step + 1);
   };
 
@@ -90,7 +91,6 @@ export default function Onboarding() {
       <button
         type="button"
         onClick={() => setFormData({ ...formData, [field]: label })}
-        // Reduced padding from p-4 to p-3.5 and text size to text-sm
         className={`w-full p-3.5 text-sm text-left rounded-xl border-2 transition-all duration-200 ${
           isSelected 
             ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold shadow-sm" 
@@ -103,11 +103,9 @@ export default function Onboarding() {
   };
 
   return (
-    // Reduced outer padding
     <div className="flex flex-col min-h-screen bg-slate-50 pt-6 pb-8 px-5">
       <div className="max-w-sm w-full mx-auto flex-1 flex flex-col">
         
-        {/* Reduced margin bottom from mb-8 to mb-6 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             {step > 1 ? (
@@ -132,9 +130,8 @@ export default function Onboarding() {
         <div className="flex-1">
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Reduced text sizes and margins */}
               <h1 className="text-2xl font-bold text-slate-800 mb-2">Let's get to know you.</h1>
-              <p className="text-slate-500 text-sm mb-6">This helps us personalize your relief strategies.</p>
+              <p className="text-slate-500 text-sm mb-6">This helps us personalize your experience.</p>
               
               <div className="space-y-4">
                 <div>
@@ -164,7 +161,7 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                How long has this behavior been a loop you’ve wanted to break?
+                How long have you been dealing with this behavior?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q1" currentValue={formData.q1} label="Under 1 year" />
@@ -178,7 +175,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                When an urge hits, what is your current go-to move to stay grounded?
+                How do you currently handle urges?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q2" currentValue={formData.q2} label="Physical activity" />
@@ -192,7 +189,7 @@ export default function Onboarding() {
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                How well does that current move actually help you manage the feeling long term?
+                How well does that usually work for you?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q3" currentValue={formData.q3} label="Works perfectly" />
@@ -206,7 +203,7 @@ export default function Onboarding() {
           {step === 5 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-xl font-bold text-slate-800 mb-6 leading-tight">
-                Let us know why you want to quit?
+                What is your main reason for quitting?
               </h1>
               <div className="space-y-2.5">
                 <OptionCard field="q4" currentValue={formData.q4} label="Damaging my relationship" />
@@ -255,7 +252,6 @@ export default function Onboarding() {
                 (step === 4 && !formData.q3) ||
                 (step === 5 && !formData.q4)
               }
-              // Reduced py-4 to py-3.5
               className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-slate-200 text-sm"
             >
               Continue
