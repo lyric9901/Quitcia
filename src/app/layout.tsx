@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineManager from "@/components/OfflineManager";
+import { Analytics } from "@vercel/analytics/next";
 
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import PostHogPageView from "@/components/PostHogPageView";
@@ -91,6 +92,7 @@ export default function RootLayout({
           {children}
           <OfflineManager />
         </PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );
