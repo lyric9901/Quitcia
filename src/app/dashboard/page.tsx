@@ -78,7 +78,6 @@ const ReflectionModal = ({ onClose }: { onClose: () => void }) => {
         {step === 1 ? (
           <div className="w-full mt-6">
             <h2 className="text-xl font-bold text-slate-800 mb-6">How is your urge now?</h2>
-            <p className="text-sm text-slate-500 mb-4 font-medium">Intensity (1 = Low, 5 = High)</p>
             <div className="flex items-center justify-center gap-4 mb-8">
               <span className="text-slate-400 font-bold">1</span>
               <input 
@@ -157,7 +156,7 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
           animate={{ scale: [1.0, 1.35, 1.0] }} transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }} 
           className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" 
         />
-        <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 1.5 }} className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">
+        <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 2 }} className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">
           Just stay here, forget everything.
         </motion.p>
       </div>
@@ -276,8 +275,23 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-2">
               {dailyTasks.map((task) => (
-                <button key={task.id} onClick={() => completeTask(task.id)} disabled={task.completed} className={`w-full flex items-center p-3 rounded-xl border transition-all ${task.completed ? 'bg-slate-50 border-slate-200 text-slate-400 line-through cursor-default' : 'bg-white border-slate-100 hover:border-blue-200 text-slate-700 cursor-pointer'}`}>
-                  <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center transition-colors ${task.completed ? 'bg-green-500 text-white' : 'bg-slate-100 border-2 border-slate-200'}`}><Check className="w-3 h-3" strokeWidth={3} /></div>
+                <button 
+                  key={task.id} 
+                  onClick={() => completeTask(task.id)} 
+                  disabled={task.completed} 
+                  className={`w-full flex items-center p-3 rounded-xl border transition-all ${
+                    task.completed 
+                      ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-default' 
+                      : 'bg-white border-slate-100 hover:border-blue-200 text-slate-700 cursor-pointer'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center transition-colors ${
+                    task.completed 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-slate-100 border-2 border-slate-200'
+                  }`}>
+                    <Check className="w-3 h-3" strokeWidth={3} />
+                  </div>
                   <span className="font-semibold text-sm truncate">{task.text}</span>
                 </button>
               ))}

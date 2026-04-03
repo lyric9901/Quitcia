@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineManager from "@/components/OfflineManager";
@@ -15,6 +15,14 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// Added Viewport configuration for PWA theme colors
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: {
@@ -58,6 +66,11 @@ export const metadata: Metadata = {
     title: "Urge Relief - Rewire Your Habits",
     description: "Master your urges and build a better you.",
     images: ["/og-image.jpg"],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Urge Relief",
   },
   robots: {
     index: true,
