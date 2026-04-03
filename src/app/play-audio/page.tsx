@@ -1,3 +1,4 @@
+// @/app/play-audio/page.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -28,6 +29,7 @@ export default function PlayAudioPage() {
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   
   // Split Milestones
+  const [logged26s, setLogged26s] = useState(false); // NEW: 26s Milestone
   const [logged30s, setLogged30s] = useState(false);
   const [logged60s, setLogged60s] = useState(false);
   
@@ -37,17 +39,13 @@ export default function PlayAudioPage() {
     let objectUrl = ""; 
 
     const loadAudio = async () => {
-      // --- ANTI-REPEAT ALGORITHM ---
       const lastTrack = localStorage.getItem("lastPlayedTrack");
       let availableTracks = AUDIO_TRACKS.filter(track => track !== lastTrack);
-      
-      // Fallback in case all tracks are filtered out (shouldn't happen with 3 tracks)
       if (availableTracks.length === 0) availableTracks = AUDIO_TRACKS;
       
       const randomTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
       localStorage.setItem("lastPlayedTrack", randomTrack);
       
-      // Clean up the track name for marketing dashboards
       const cleanName = randomTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
       setTrackName(cleanName);
 
@@ -87,6 +85,13 @@ export default function PlayAudioPage() {
       const current = audioRef.current.currentTime;
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
+
+      // NEW: 26 Second Milestone (Marks Audio as Completed for Reflection)
+      if (current >= 26 && !logged26s) {
+        setLogged26s(true);
+        // Save the exact time they hit 26 seconds
+        localStorage.setItem("lastAudioCompletionTime", Date.now().toString());
+      }
 
       // 30 Second Milestone (All-Time)
       if (current >= 30 && !logged30s && auth.currentUser) {
@@ -144,9 +149,7 @@ export default function PlayAudioPage() {
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
-
-  // Visual state uses the 30s mark as the baseline for "recorded"
-  const isVisuallyRecorded = logged30s; 
+  const isVisuallyRecorded = logged26s; // Changed to reflect 26s completion
 
   return (
     <main className="flex flex-col items-center justify-center h-[100dvh] bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] overflow-hidden relative selection:bg-transparent">
