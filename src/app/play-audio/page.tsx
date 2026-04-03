@@ -13,7 +13,8 @@ import { usePostHog } from 'posthog-js/react';
 const AUDIO_TRACKS = [
   "/audio/track1.mp3",
   "/audio/track2.mp3",
-  "/audio/track3.mp3"
+  "/audio/track3.mp3",
+  "/audio/track4.mp3"
 ];
 
 export default function PlayAudioPage() {
@@ -26,10 +27,11 @@ export default function PlayAudioPage() {
   
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [trackName, setTrackName] = useState<string>("Unknown Track");
+  const [currentTrackPath, setCurrentTrackPath] = useState<string>("");
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   
   // Split Milestones
-  const [logged26s, setLogged26s] = useState(false); // NEW: 26s Milestone
+  const [logged26s, setLogged26s] = useState(false);
   const [logged30s, setLogged30s] = useState(false);
   const [logged60s, setLogged60s] = useState(false);
   
@@ -39,17 +41,48 @@ export default function PlayAudioPage() {
     let objectUrl = ""; 
 
     const loadAudio = async () => {
-      const lastTrack = localStorage.getItem("lastPlayedTrack");
-      let availableTracks = AUDIO_TRACKS.filter(track => track !== lastTrack);
-      if (availableTracks.length === 0) availableTracks = AUDIO_TRACKS;
+      let cycle: string[] = [];
+      let index = 0;
+
+      // 1. Check storage for existing cycle and index
+      try {
+        const storedCycle = localStorage.getItem("audioCycle");
+        const storedIndex = localStorage.getItem("cycleIndex");
+        if (storedCycle) cycle = JSON.parse(storedCycle);
+        if (storedIndex) index = parseInt(storedIndex, 10);
+      } catch (e) {
+        console.error("Storage error", e);
+      }
+
+      // 2. If no valid cycle exists or the cycle is finished, create a new one
+      if (!Array.isArray(cycle) || cycle.length !== AUDIO_TRACKS.length || index >= cycle.length || isNaN(index)) {
+        cycle = [...AUDIO_TRACKS];
+        
+        // Fisher-Yates Shuffle
+        for (let i = cycle.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cycle[i], cycle[j]] = [cycle[j], cycle[i]];
+        }
+
+        // Prevent repeating the last played track immediately in the new cycle
+        const lastPlayed = localStorage.getItem("lastPlayedTrack");
+        if (cycle[0] === lastPlayed && cycle.length > 1) {
+          [cycle[0], cycle[1]] = [cycle[1], cycle[0]]; // Swap first two tracks
+        }
+
+        index = 0;
+        localStorage.setItem("audioCycle", JSON.stringify(cycle));
+        localStorage.setItem("cycleIndex", "0");
+      }
+
+      // 3. Load the track assigned to the current index
+      const selectedTrack = cycle[index];
+      setCurrentTrackPath(selectedTrack);
       
-      const randomTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
-      localStorage.setItem("lastPlayedTrack", randomTrack);
-      
-      const cleanName = randomTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
+      const cleanName = selectedTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
       setTrackName(cleanName);
 
-      objectUrl = await getOfflineAudioUrl(randomTrack);
+      objectUrl = await getOfflineAudioUrl(selectedTrack);
       setAudioSrc(objectUrl);
     };
 
@@ -69,9 +102,19 @@ export default function PlayAudioPage() {
         posthog.capture('Audio Paused', { 'Track Name': trackName });
       } else {
         audioRef.current.play();
+        
+        // ONLY advance the cycle in storage when the user actually starts the session
         if (!hasStartedPlaying) {
-          posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
           setHasStartedPlaying(true);
+          posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
+          
+          try {
+            let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
+            localStorage.setItem("lastPlayedTrack", currentTrackPath); // Save this track to prevent repeats later
+            localStorage.setItem("cycleIndex", (index + 1).toString()); // Advance the index for the next page load
+          } catch (e) {
+            console.error("Error advancing cycle", e);
+          }
         } else {
           posthog.capture('Audio Resumed', { 'Track Name': trackName });
         }
@@ -86,35 +129,27 @@ export default function PlayAudioPage() {
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
-      // NEW: 26 Second Milestone (Marks Audio as Completed for Reflection)
       if (current >= 26 && !logged26s) {
         setLogged26s(true);
-        // Save the exact time they hit 26 seconds
         localStorage.setItem("lastAudioCompletionTime", Date.now().toString());
       }
 
-      // 30 Second Milestone (All-Time)
       if (current >= 30 && !logged30s && auth.currentUser) {
         setLogged30s(true);
         posthog.capture('All-Time Milestone Reached (30s)', { 'Track Name': trackName });
-
         try {
           await addDoc(collection(db, "users", auth.currentUser.uid, "swm_sessions"), {
-            timestamp: serverTimestamp(),
-            type: "SWM_milestone_30s"
+            timestamp: serverTimestamp(), type: "SWM_milestone_30s"
           });
         } catch (error) { console.error("Logging error", error); }
       }
 
-      // 60 Second Milestone (Daily Progress)
       if (current >= 60 && !logged60s && auth.currentUser) {
         setLogged60s(true);
         posthog.capture('Daily Progress Milestone Reached (60s)', { 'Track Name': trackName });
-
         try {
           await addDoc(collection(db, "users", auth.currentUser.uid, "swm_sessions"), {
-            timestamp: serverTimestamp(),
-            type: "SWM_milestone_60s"
+            timestamp: serverTimestamp(), type: "SWM_milestone_60s"
           });
         } catch (error) { console.error("Logging error", error); }
       }
@@ -149,7 +184,7 @@ export default function PlayAudioPage() {
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
-  const isVisuallyRecorded = logged26s; // Changed to reflect 26s completion
+  const isVisuallyRecorded = logged26s;
 
   return (
     <main className="flex flex-col items-center justify-center h-[100dvh] bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] overflow-hidden relative selection:bg-transparent">
