@@ -141,6 +141,31 @@ export default function PlayAudioPage() {
     };
   }, []);
 
+  // Automatically play audio once the source is loaded
+  useEffect(() => {
+    if (audioSrc && audioRef.current && !hasStartedPlaying) {
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          setIsPlaying(true);
+          setHasStartedPlaying(true);
+          posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
+          
+          try {
+            let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
+            localStorage.setItem("lastPlayedTrack", currentTrackPath); 
+            localStorage.setItem("cycleIndex", (index + 1).toString()); 
+          } catch (e) {
+            console.error("Error advancing cycle", e);
+          }
+        }).catch((error) => {
+          console.warn("Autoplay was prevented by the browser. User must click play.", error);
+        });
+      }
+    }
+  }, [audioSrc, trackName, currentTrackPath, hasStartedPlaying, posthog]);
+
   const togglePlay = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -227,7 +252,6 @@ export default function PlayAudioPage() {
         'Hit 60s Milestone': timeListened >= 60 ? "Yes" : "No"
       });
 
-      // Log drop-off for Admin Dashboard
       try {
         await addDoc(collection(db, "audio_sessions"), {
           status: "dropped",
@@ -247,7 +271,6 @@ export default function PlayAudioPage() {
       'Counted As Successful Session': "Yes"
     });
 
-    // Log completion for Admin Dashboard
     if (audioRef.current) {
       try {
         await addDoc(collection(db, "audio_sessions"), {
@@ -267,31 +290,32 @@ export default function PlayAudioPage() {
   const circumference = 2 * Math.PI * radius;
 
   // Breathing rhythms (Seconds per full breath cycle)
-  // 4s = Anxious/Starting, 6s = Settling, 9s = Deep calm
   const breathingSpeed = currentPhase === 1 ? 4 : currentPhase === 2 ? 6 : 9;
 
   return (
     <main suppressHydrationWarning className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent">
       
-      {/* High-Performance Breathing Layer */}
-      <motion.div 
-        initial={false}
-        animate={{
-          scale: [1, 1.4, 1.4, 1], // Increased scale significantly for better visibility
-          opacity: [0.15, 0.9, 0.9, 0.15], // Widened opacity bounds for higher contrast
-        }}
-        transition={{
-          duration: breathingSpeed,
-          repeat: Infinity,
-          ease: "easeInOut",
-          times: [0, 0.4, 0.5, 1] 
-        }}
-        className="absolute inset-0 z-0 pointer-events-none w-full h-full"
-        style={{
-          background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
-          willChange: 'transform, opacity' // Forces hardware acceleration on mobile
-        }}
-      />
+      {/* High-Performance Breathing Layer - FIXED FOR VERCEL */}
+      {isMounted && (
+        <motion.div 
+          initial={{ scale: 1, opacity: 0.15 }}
+          animate={{
+            scale: [1, 1.4, 1.4, 1],
+            opacity: [0.15, 0.9, 0.9, 0.15],
+          }}
+          transition={{
+            duration: breathingSpeed,
+            repeat: Infinity,
+            ease: "easeInOut",
+            times: [0, 0.4, 0.5, 1] 
+          }}
+          className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
+            willChange: 'transform, opacity' 
+          }}
+        />
+      )}
 
       <button onClick={handleExitAudio} className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
@@ -311,7 +335,7 @@ export default function PlayAudioPage() {
               cx="140" 
               cy="140" 
               r={radius} 
-              stroke="#ffffff" // Removed isVisuallyRecorded green condition
+              stroke="#ffffff"
               strokeWidth="8" 
               fill="transparent" 
               strokeLinecap="round" 
