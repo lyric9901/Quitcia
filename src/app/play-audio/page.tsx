@@ -250,25 +250,25 @@ export default function PlayAudioPage() {
   return (
     <main suppressHydrationWarning className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent">
       
-      {/* High-Performance Breathing Layer
-          Uses 'times' array to map out: Inhale (0-40%), Hold (40-50%), Exhale (50-100%)
-      */}
+      {/* High-Performance Breathing Layer */}
       <motion.div 
         initial={false}
         animate={{
-          scale: [1, 1.1, 1.1, 1], // Subtle, smooth zooming effect
-          opacity: [0, 0.7, 0.7, 0], // Crossfades entire screen color
+          scale: [1, 1.4, 1.4, 1], // Increased scale significantly for better visibility
+          opacity: [0.15, 0.9, 0.9, 0.15], // Widened opacity bounds for higher contrast
         }}
         transition={{
           duration: breathingSpeed,
           repeat: Infinity,
           ease: "easeInOut",
-          times: [0, 0.4, 0.5, 1] // Maps the keyframes to a natural human breathing rhythm
+          times: [0, 0.4, 0.5, 1] 
         }}
-        className="absolute inset-[-10%] w-[120%] h-[120%] z-0 pointer-events-none"
+        // Removed 120% widths and replaced with inset-0 w-full h-full to fix mobile overflow dropping.
+        className="absolute inset-0 z-0 pointer-events-none w-full h-full"
         style={{
-          // Full-screen gradient edge-to-edge. No transparent cut-offs.
-          background: 'radial-gradient(circle at center, #a6c3f5 0%, #6F96D6 100%)',
+          // Brighter center fading out makes the expansion much more obvious over the blue background
+          background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
+          willChange: 'transform, opacity' // Forces hardware acceleration on mobile
         }}
       />
 
