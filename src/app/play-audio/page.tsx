@@ -71,6 +71,7 @@ export default function PlayAudioPage() {
   const [currentTrackPath, setCurrentTrackPath] = useState<string>("");
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isBreathingActive, setIsBreathingActive] = useState(false);
 
   const [displayText, setDisplayText] = useState<string>("");
   const [currentPhase, setCurrentPhase] = useState<number>(1); 
@@ -141,7 +142,6 @@ export default function PlayAudioPage() {
     };
   }, []);
 
-  // Automatically play audio once the source is loaded
   useEffect(() => {
     if (audioSrc && audioRef.current && !hasStartedPlaying) {
       const playPromise = audioRef.current.play();
@@ -198,6 +198,14 @@ export default function PlayAudioPage() {
       const current = audioRef.current.currentTime;
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
+
+      // Trigger breathing animation for 5 seconds at specific intervals (1:00, 1:40, 2:20, etc.)
+      const triggerTimes = [60, 100, 140, 180, 220, 260, 300, 340, 380, 420];
+      const inBreathingWindow = triggerTimes.some(time => current >= time && current < time + 5);
+      
+      if (isBreathingActive !== inBreathingWindow) {
+        setIsBreathingActive(inBreathingWindow);
+      }
 
       if (current < 45 && currentPhase !== 1) {
         setCurrentPhase(1);
@@ -289,33 +297,32 @@ export default function PlayAudioPage() {
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
 
-  // Breathing rhythms (Seconds per full breath cycle)
-  const breathingSpeed = currentPhase === 1 ? 4 : currentPhase === 2 ? 6 : 9;
-
   return (
     <main suppressHydrationWarning className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent">
       
-      {/* High-Performance Breathing Layer - FIXED FOR VERCEL */}
-      {isMounted && (
-        <motion.div 
-          initial={{ scale: 1, opacity: 0.15 }}
-          animate={{
-            scale: [1, 1.4, 1.4, 1],
-            opacity: [0.15, 0.9, 0.9, 0.15],
-          }}
-          transition={{
-            duration: breathingSpeed,
-            repeat: Infinity,
-            ease: "easeInOut",
-            times: [0, 0.4, 0.5, 1] 
-          }}
-          className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
-            willChange: 'transform, opacity' 
-          }}
-        />
-      )}
+      {/* High-Performance Breathing Layer - Triggers for 5s at specific intervals */}
+      <AnimatePresence>
+        {isMounted && isBreathingActive && (
+          <motion.div 
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{
+              scale: [1, 1.4, 1.4, 1],
+              opacity: [0, 0.9, 0.9, 0], 
+            }}
+            exit={{ opacity: 0, transition: { duration: 0.5 } }}
+            transition={{
+              duration: 5, 
+              ease: "easeInOut",
+              times: [0, 0.4, 0.5, 1] 
+            }}
+            className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
+              willChange: 'transform, opacity' 
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <button onClick={handleExitAudio} className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
@@ -349,7 +356,6 @@ export default function PlayAudioPage() {
             <button onClick={togglePlay} className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center border border-white/30 transition-all">
               {isPlaying ? <Pause className="w-8 h-8 fill-white text-white" /> : <Play className="w-8 h-8 fill-white text-white ml-1" />}
             </button>
-            {/* Always visible timeline text */}
             <span className="absolute -bottom-12 text-slate-800 font-bold font-mono text-sm tracking-widest bg-white/90 backdrop-blur-sm shadow-lg px-3 py-1 rounded-full">
               {currentTimeStr}
             </span>
@@ -360,18 +366,31 @@ export default function PlayAudioPage() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
               key={displayText}
-              initial={{ opacity: 0, y: 5, backgroundPosition: "200% center" }}
-              animate={{ opacity: 1, y: 0, backgroundPosition: "-200% center" }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ 
-                opacity: { duration: 0.6, ease: "easeOut" },
-                y: { duration: 0.6, ease: "easeOut" },
-                backgroundPosition: { repeat: Infinity, duration: 3.5, ease: "linear" }
+              initial={{ 
+                opacity: 0, 
+                y: 5, 
+                filter: "blur(12px)", 
+                backgroundPosition: "100% 0" 
               }}
-              className="text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              animate={{ 
+                opacity: 1, 
+                y: 0, 
+                filter: "blur(0px)", 
+                backgroundPosition: "0% 0" 
+              }}
+              exit={{ 
+                opacity: 0, 
+                y: -5, 
+                filter: "blur(8px)" 
+              }}
+              transition={{ 
+                duration: 1.2, 
+                ease: "easeOut" 
+              }}
+              className="text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               style={{
-                backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.6) 100%)",
-                backgroundSize: "200% auto",
+                backgroundImage: "linear-gradient(90deg, #ffffff 0%, #ffffff 40%, rgba(255,255,255,0.4) 60%, rgba(255,255,255,0) 100%)",
+                backgroundSize: "300% 100%",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
