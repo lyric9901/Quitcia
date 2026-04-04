@@ -26,7 +26,7 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "urge") { // Change this to a secure password
+    if (password === "urge003") { // Change this to a secure password
       setIsAuthenticated(true);
       fetchData();
     } else {
