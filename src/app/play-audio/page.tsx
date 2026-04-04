@@ -213,7 +213,7 @@ export default function PlayAudioPage() {
     }
   };
 
-  const handleExitAudio = () => {
+  const handleExitAudio = async () => {
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
       const minutes = Math.floor(timeListened / 60);
@@ -227,15 +227,40 @@ export default function PlayAudioPage() {
         'Hit 30s Milestone': timeListened >= 30 ? "Yes" : "No",
         'Hit 60s Milestone': timeListened >= 60 ? "Yes" : "No"
       });
+
+      // Log drop-off for Admin Dashboard
+      try {
+        await addDoc(collection(db, "audio_sessions"), {
+          status: "dropped",
+          timeListened: timeListened,
+          timestamp: serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error logging drop-off", error);
+      }
     }
     router.push("/dashboard");
   };
 
-  const handleAudioEnded = () => {
+  const handleAudioEnded = async () => {
     posthog.capture('Audio Session Fully Completed', {
       'Track Name': trackName,
       'Counted As Successful Session': "Yes"
     });
+
+    // Log completion for Admin Dashboard
+    if (audioRef.current) {
+      try {
+        await addDoc(collection(db, "audio_sessions"), {
+          status: "completed",
+          timeListened: Math.floor(audioRef.current.duration || 0),
+          timestamp: serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error logging completion", error);
+      }
+    }
+
     router.push("/dashboard");
   };
 
