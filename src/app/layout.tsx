@@ -6,7 +6,7 @@ import OfflineManager from "@/components/OfflineManager";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import PostHogPageView from "@/components/PostHogPageView";
 
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -93,6 +93,7 @@ export default function RootLayout({
           {children}
           <OfflineManager />
         </PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );
