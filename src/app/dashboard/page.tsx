@@ -149,11 +149,11 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
       </button>
       <div className="flex flex-col items-center justify-center w-full h-full relative">
         <motion.div 
-          animate={{ scale: [1.0, 1.35, 1.0] }} transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }} 
+          animate={{ scale: [1.0, 1.35, 1.0] }} transition={{ duration: 8, times: [0, 0.8, 1], ease: ["easeInOut", "easeIn"], repeat: Infinity }} 
           className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-40 absolute" 
         />
         <motion.div 
-          animate={{ scale: [1.0, 1.35, 1.0] }} transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }} 
+          animate={{ scale: [1.0, 1.35, 1.0] }} transition={{ duration: 8, times: [0, 0.8, 1], ease: ["easeInOut", "easeIn"], repeat: Infinity }} 
           className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" 
         />
         <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 2 }} className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6">

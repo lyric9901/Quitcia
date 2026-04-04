@@ -17,6 +17,48 @@ const AUDIO_TRACKS = [
   "/audio/track4.mp3"
 ];
 
+// Phase 1 (0 to 45 seconds)
+const PHASE_1_TEXTS = [
+  "Pause for a moment. Just listen.",
+  "Stay here with me for a minute.",
+  "Nothing needs to happen right now.",
+  "Let this moment slow down.",
+  "Take one steady breath and stay here.",
+  "You're safe to pause for a moment.",
+  "Just press play and stay present.",
+  "Let the urge sit without reacting.",
+  "Give yourself this small pause.",
+  "Stay here. The intensity will pass."
+];
+
+// Phase 2 (45 to 95 seconds [1:35])
+const PHASE_2_TEXTS = [
+  "You're doing well. Keep staying here.",
+  "The urge is already changing.",
+  "Just keep breathing and listening.",
+  "Notice how the intensity shifts.",
+  "Stay steady for a few more breaths.",
+  "You're riding out the wave.",
+  "Each moment you wait weakens it.",
+  "Let your mind settle naturally.",
+  "You're handling this moment.",
+  "Stay with the calm you're building."
+];
+
+// Phase 3 (1:35 [95 seconds] onwards)
+const PHASE_3_TEXTS = [
+  "You're almost through the wave.",
+  "The moment is passing now.",
+  "Take one more calm breath.",
+  "You stayed through the hardest part.",
+  "Notice how the urge has softened.",
+  "This pause helped you regain control.",
+  "Stay calm for a few more seconds.",
+  "You're finishing strong.",
+  "The intensity has passed.",
+  "Take this calm with you."
+];
+
 export default function PlayAudioPage() {
   const router = useRouter();
   const posthog = usePostHog();
@@ -29,13 +71,20 @@ export default function PlayAudioPage() {
   const [trackName, setTrackName] = useState<string>("Unknown Track");
   const [currentTrackPath, setCurrentTrackPath] = useState<string>("");
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const [displayText, setDisplayText] = useState<string>("");
+  const [currentPhase, setCurrentPhase] = useState<number>(1); 
   
-  // Split Milestones
   const [logged26s, setLogged26s] = useState(false);
   const [logged30s, setLogged30s] = useState(false);
   const [logged60s, setLogged60s] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     let objectUrl = ""; 
@@ -44,7 +93,6 @@ export default function PlayAudioPage() {
       let cycle: string[] = [];
       let index = 0;
 
-      // 1. Check storage for existing cycle and index
       try {
         const storedCycle = localStorage.getItem("audioCycle");
         const storedIndex = localStorage.getItem("cycleIndex");
@@ -54,20 +102,17 @@ export default function PlayAudioPage() {
         console.error("Storage error", e);
       }
 
-      // 2. If no valid cycle exists or the cycle is finished, create a new one
       if (!Array.isArray(cycle) || cycle.length !== AUDIO_TRACKS.length || index >= cycle.length || isNaN(index)) {
         cycle = [...AUDIO_TRACKS];
         
-        // Fisher-Yates Shuffle
         for (let i = cycle.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [cycle[i], cycle[j]] = [cycle[j], cycle[i]];
         }
 
-        // Prevent repeating the last played track immediately in the new cycle
         const lastPlayed = localStorage.getItem("lastPlayedTrack");
         if (cycle[0] === lastPlayed && cycle.length > 1) {
-          [cycle[0], cycle[1]] = [cycle[1], cycle[0]]; // Swap first two tracks
+          [cycle[0], cycle[1]] = [cycle[1], cycle[0]];
         }
 
         index = 0;
@@ -75,7 +120,6 @@ export default function PlayAudioPage() {
         localStorage.setItem("cycleIndex", "0");
       }
 
-      // 3. Load the track assigned to the current index
       const selectedTrack = cycle[index];
       setCurrentTrackPath(selectedTrack);
       
@@ -84,6 +128,9 @@ export default function PlayAudioPage() {
 
       objectUrl = await getOfflineAudioUrl(selectedTrack);
       setAudioSrc(objectUrl);
+
+      setDisplayText(PHASE_1_TEXTS[Math.floor(Math.random() * PHASE_1_TEXTS.length)]);
+      setCurrentPhase(1);
     };
 
     loadAudio();
@@ -103,15 +150,14 @@ export default function PlayAudioPage() {
       } else {
         audioRef.current.play();
         
-        // ONLY advance the cycle in storage when the user actually starts the session
         if (!hasStartedPlaying) {
           setHasStartedPlaying(true);
           posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
           
           try {
             let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
-            localStorage.setItem("lastPlayedTrack", currentTrackPath); // Save this track to prevent repeats later
-            localStorage.setItem("cycleIndex", (index + 1).toString()); // Advance the index for the next page load
+            localStorage.setItem("lastPlayedTrack", currentTrackPath); 
+            localStorage.setItem("cycleIndex", (index + 1).toString()); 
           } catch (e) {
             console.error("Error advancing cycle", e);
           }
@@ -128,6 +174,17 @@ export default function PlayAudioPage() {
       const current = audioRef.current.currentTime;
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
+
+      if (current < 45 && currentPhase !== 1) {
+        setCurrentPhase(1);
+        setDisplayText(PHASE_1_TEXTS[Math.floor(Math.random() * PHASE_1_TEXTS.length)]);
+      } else if (current >= 45 && current < 95 && currentPhase !== 2) {
+        setCurrentPhase(2);
+        setDisplayText(PHASE_2_TEXTS[Math.floor(Math.random() * PHASE_2_TEXTS.length)]);
+      } else if (current >= 95 && currentPhase !== 3) {
+        setCurrentPhase(3);
+        setDisplayText(PHASE_3_TEXTS[Math.floor(Math.random() * PHASE_3_TEXTS.length)]);
+      }
 
       if (current >= 26 && !logged26s) {
         setLogged26s(true);
@@ -186,32 +243,72 @@ export default function PlayAudioPage() {
   const circumference = 2 * Math.PI * radius;
   const isVisuallyRecorded = logged26s;
 
+  // Breathing rhythms (Seconds per full breath cycle)
+  // 4s = Anxious/Starting, 6s = Settling, 9s = Deep calm
+  const breathingSpeed = currentPhase === 1 ? 4 : currentPhase === 2 ? 6 : 9;
+
   return (
-    <main className="flex flex-col items-center justify-center h-[100dvh] bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] overflow-hidden relative selection:bg-transparent">
-      <button onClick={handleExitAudio} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all">
+    <main suppressHydrationWarning className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent">
+      
+      {/* High-Performance Breathing Layer
+          Uses 'times' array to map out: Inhale (0-40%), Hold (40-50%), Exhale (50-100%)
+      */}
+      <motion.div 
+        initial={false}
+        animate={{
+          scale: [1, 1.1, 1.1, 1], // Subtle, smooth zooming effect
+          opacity: [0, 0.7, 0.7, 0], // Crossfades entire screen color
+        }}
+        transition={{
+          duration: breathingSpeed,
+          repeat: Infinity,
+          ease: "easeInOut",
+          times: [0, 0.4, 0.5, 1] // Maps the keyframes to a natural human breathing rhythm
+        }}
+        className="absolute inset-[-10%] w-[120%] h-[120%] z-0 pointer-events-none"
+        style={{
+          // Full-screen gradient edge-to-edge. No transparent cut-offs.
+          background: 'radial-gradient(circle at center, #a6c3f5 0%, #6F96D6 100%)',
+        }}
+      />
+
+      <button onClick={handleExitAudio} className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all">
         <X className="w-6 h-6" />
       </button>
 
       {audioSrc && <audio ref={audioRef} src={audioSrc} onTimeUpdate={handleTimeUpdate} onEnded={handleAudioEnded} />}
 
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center w-full h-full relative z-20">
-        <div className="relative flex items-center justify-center mb-12">
+      <motion.div initial={false} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center w-full h-full relative z-20">
+        
+        <div className="relative flex items-center justify-center">
           <div className="absolute inset-0 z-30 rounded-full cursor-pointer" onClick={() => { setShowTime(true); setTimeout(() => setShowTime(false), 2500); }} />
           
           <svg className="transform -rotate-90 w-[280px] h-[280px]">
-            <circle cx="140" cy="140" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
-            <motion.circle cx="140" cy="140" r={radius} stroke={isVisuallyRecorded ? "#10b981" : "#3b82f6"} strokeWidth="8" fill="transparent" strokeLinecap="round" animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} style={{ strokeDasharray: circumference }} transition={{ ease: "linear", duration: 0.2 }} />
+            <circle cx="140" cy="140" r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="transparent" />
+            <motion.circle 
+              initial={false}
+              cx="140" 
+              cy="140" 
+              r={radius} 
+              stroke={isVisuallyRecorded ? "#10b981" : "#ffffff"} 
+              strokeWidth="8" 
+              fill="transparent" 
+              strokeLinecap="round" 
+              animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} 
+              style={{ strokeDasharray: circumference }} 
+              transition={{ ease: "linear", duration: 0.2 }} 
+            />
           </svg>
           
           <div className="absolute z-40 flex flex-col items-center justify-center">
-            <button onClick={togglePlay} className="w-20 h-20 bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center text-slate-800 border border-slate-200 transition-all">
-              {isPlaying ? <Pause className="w-8 h-8 fill-slate-800 text-slate-800" /> : <Play className="w-8 h-8 fill-slate-800 text-slate-800 ml-1" />}
+            <button onClick={togglePlay} className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center border border-white/30 transition-all">
+              {isPlaying ? <Pause className="w-8 h-8 fill-white text-white" /> : <Play className="w-8 h-8 fill-white text-white ml-1" />}
             </button>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {showTime && (
                 <motion.span 
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} 
-                  className="absolute -bottom-12 text-slate-700 font-bold font-mono text-sm tracking-widest bg-white/80 shadow-sm px-3 py-1 rounded-full"
+                  className="absolute -bottom-12 text-slate-800 font-bold font-mono text-sm tracking-widest bg-white/90 backdrop-blur-sm shadow-lg px-3 py-1 rounded-full"
                 >
                   {currentTimeStr}
                 </motion.span>
@@ -220,9 +317,21 @@ export default function PlayAudioPage() {
           </div>
         </div>
         
-        <p className={`text-sm tracking-widest uppercase mb-4 transition-colors duration-500 ${isVisuallyRecorded ? 'text-emerald-600 font-bold' : 'text-slate-500 font-medium'}`}>
-          {isVisuallyRecorded ? "Session Recorded" : "Focus Mode Active"}
-        </p>
+        <div className="h-16 flex items-center justify-center mt-10 px-8 text-center">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.p
+              key={displayText}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="text-lg font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+            >
+              {displayText}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
       </motion.div>
     </main>
   );
