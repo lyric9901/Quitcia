@@ -64,7 +64,6 @@ export default function PlayAudioPage() {
   const posthog = usePostHog();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [showTime, setShowTime] = useState(false);
   const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
   
   const [audioSrc, setAudioSrc] = useState<string>("");
@@ -266,7 +265,6 @@ export default function PlayAudioPage() {
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
-  const isVisuallyRecorded = logged26s;
 
   // Breathing rhythms (Seconds per full breath cycle)
   // 4s = Anxious/Starting, 6s = Settling, 9s = Deep calm
@@ -288,10 +286,8 @@ export default function PlayAudioPage() {
           ease: "easeInOut",
           times: [0, 0.4, 0.5, 1] 
         }}
-        // Removed 120% widths and replaced with inset-0 w-full h-full to fix mobile overflow dropping.
         className="absolute inset-0 z-0 pointer-events-none w-full h-full"
         style={{
-          // Brighter center fading out makes the expansion much more obvious over the blue background
           background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
           willChange: 'transform, opacity' // Forces hardware acceleration on mobile
         }}
@@ -306,7 +302,7 @@ export default function PlayAudioPage() {
       <motion.div initial={false} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center w-full h-full relative z-20">
         
         <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 z-30 rounded-full cursor-pointer" onClick={() => { setShowTime(true); setTimeout(() => setShowTime(false), 2500); }} />
+          <div className="absolute inset-0 z-30 rounded-full pointer-events-none" />
           
           <svg className="transform -rotate-90 w-[280px] h-[280px]">
             <circle cx="140" cy="140" r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="transparent" />
@@ -315,7 +311,7 @@ export default function PlayAudioPage() {
               cx="140" 
               cy="140" 
               r={radius} 
-              stroke={isVisuallyRecorded ? "#10b981" : "#ffffff"} 
+              stroke="#ffffff" // Removed isVisuallyRecorded green condition
               strokeWidth="8" 
               fill="transparent" 
               strokeLinecap="round" 
@@ -329,16 +325,10 @@ export default function PlayAudioPage() {
             <button onClick={togglePlay} className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center border border-white/30 transition-all">
               {isPlaying ? <Pause className="w-8 h-8 fill-white text-white" /> : <Play className="w-8 h-8 fill-white text-white ml-1" />}
             </button>
-            <AnimatePresence initial={false}>
-              {showTime && (
-                <motion.span 
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} 
-                  className="absolute -bottom-12 text-slate-800 font-bold font-mono text-sm tracking-widest bg-white/90 backdrop-blur-sm shadow-lg px-3 py-1 rounded-full"
-                >
-                  {currentTimeStr}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            {/* Always visible timeline text */}
+            <span className="absolute -bottom-12 text-slate-800 font-bold font-mono text-sm tracking-widest bg-white/90 backdrop-blur-sm shadow-lg px-3 py-1 rounded-full">
+              {currentTimeStr}
+            </span>
           </div>
         </div>
         
@@ -346,11 +336,21 @@ export default function PlayAudioPage() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
               key={displayText}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 5, backgroundPosition: "200% center" }}
+              animate={{ opacity: 1, y: 0, backgroundPosition: "-200% center" }}
               exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="text-lg font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              transition={{ 
+                opacity: { duration: 0.6, ease: "easeOut" },
+                y: { duration: 0.6, ease: "easeOut" },
+                backgroundPosition: { repeat: Infinity, duration: 3.5, ease: "linear" }
+              }}
+              className="text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              style={{
+                backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.6) 100%)",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent"
+              }}
             >
               {displayText}
             </motion.p>
