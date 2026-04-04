@@ -42,6 +42,11 @@ const ReflectionModal = ({ onClose }: { onClose: () => void }) => {
   const [intensity, setIntensity] = useState(3);
   const [resolution, setResolution] = useState<string | null>(null);
 
+  const handleDismiss = () => {
+    localStorage.removeItem("lastAudioCompletionTime"); // Clear it so it doesn't show again if dismissed
+    onClose();
+  };
+
   const handleSubmit = async () => {
     if (!resolution) return;
     try {
@@ -71,7 +76,7 @@ const ReflectionModal = ({ onClose }: { onClose: () => void }) => {
         className="bg-white w-full max-w-sm rounded-3xl p-6 relative shadow-xl flex flex-col items-center text-center"
       >
         {/* Cross button Top Left */}
-        <button onClick={onClose} className="absolute top-4 left-4 text-slate-400 hover:text-slate-800 p-2 rounded-full hover:bg-slate-100 transition-all">
+        <button onClick={handleDismiss} className="absolute top-4 left-4 text-slate-400 hover:text-slate-800 p-2 rounded-full hover:bg-slate-100 transition-all">
           <X className="w-5 h-5" />
         </button>
 
