@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Added router
+import { useRouter } from "next/navigation"; 
 import { auth, googleProvider, db } from "@/lib/firebase";
 import { 
   signInWithPopup, 
@@ -18,7 +18,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); // Initialize router
+  const router = useRouter(); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -27,20 +27,19 @@ export default function Auth() {
           // Check if user has completed onboarding
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists() && userDoc.data().name) {
-            window.location.href = "/dashboard";
+            router.push("/dashboard"); // Use router.push instead of window.location
           } else {
-            window.location.href = "/onboarding";
+            router.push("/onboarding");
           }
         } catch (error) {
-          // If Firestore fails, assume not onboarded
-          window.location.href = "/onboarding";
+          router.push("/onboarding");
         }
       } else {
         setLoading(false);
       }
     });
     return unsubscribe;
-  }, []);
+  }, [router]); // Added router to dependency array
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +50,8 @@ export default function Auth() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      // Fallback redirect
-      window.location.href = "/onboarding";
+      // REMOVED: window.location.href = "/onboarding"; 
+      // The onAuthStateChanged listener will handle the redirect automatically.
     } catch (err: any) {
       setError(err.message);
     }
@@ -61,8 +60,7 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      // Fallback redirect
-      window.location.href = "/onboarding";
+      // REMOVED: window.location.href = "/onboarding";
     } catch (err: any) {
       setError(err.message);
     }
