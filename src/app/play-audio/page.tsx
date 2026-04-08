@@ -257,6 +257,9 @@ export default function PlayAudioPage() {
   const handleExitAudio = async () => {
     if (isExiting) return;
     setIsExiting(true);
+    
+    // NEW: Save the exact time the user exits the audio player
+    localStorage.setItem("lastAudioExitTime", Date.now().toString());
 
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
@@ -293,6 +296,9 @@ export default function PlayAudioPage() {
 
   const handleAudioEnded = async () => {
     setIsExiting(true);
+
+    // NEW: Save the exact time the audio player completes
+    localStorage.setItem("lastAudioExitTime", Date.now().toString());
 
     posthog.capture('Audio Session Fully Completed', {
       'Track Name': trackName,

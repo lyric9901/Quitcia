@@ -198,7 +198,6 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // NEW: Check for 31-minute reflection
   useEffect(() => {
     const checkReflectionTime = () => {
       const completionTimeStr = localStorage.getItem("lastAudioCompletionTime");
@@ -241,6 +240,19 @@ export default function DashboardPage() {
         await addDoc(urgesRef, { timestamp: new Date(), type: "urge_logged" });
       } catch (error) { console.error("Error logging urge:", error); }
     }
+
+    // --- SKIP ORB IF LESS THAN 20 SECONDS ---
+    // Try to get exit time, fallback to completion time
+    const lastAudioTime = localStorage.getItem("lastAudioExitTime") || localStorage.getItem("lastAudioCompletionTime");
+    if (lastAudioTime) {
+      const timeElapsed = Date.now() - parseInt(lastAudioTime, 10);
+      
+      if (timeElapsed < 20000) { // 20000 ms = 20 seconds
+        router.push("/play-audio");
+        return; 
+      }
+    }
+
     setActiveModal("orb");
   };
 
@@ -252,7 +264,6 @@ export default function DashboardPage() {
   return (
     <main className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full w-full">
-        {/* CHANGED: justify-end makes the button stick directly to the right edge */}
         <header className="px-5 pt-10 pb-4 flex items-center justify-end shrink-0 max-w-md w-full mx-auto">
           <button onClick={() => router.push("/profile")} className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
             <User className="w-5 h-5" />
