@@ -252,8 +252,8 @@ export default function DashboardPage() {
   return (
     <main className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full w-full">
-        <header className="px-5 pt-10 pb-4 flex items-center justify-between shrink-0 max-w-md w-full mx-auto">
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">       </h1>
+        {/* CHANGED: justify-end makes the button stick directly to the right edge */}
+        <header className="px-5 pt-10 pb-4 flex items-center justify-end shrink-0 max-w-md w-full mx-auto">
           <button onClick={() => router.push("/profile")} className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
             <User className="w-5 h-5" />
           </button>
