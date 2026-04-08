@@ -77,7 +77,7 @@ export default function Auth() {
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-md p-8 mx-auto bg-white rounded-2xl shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-slate-800">
-        {isLogin ? "Welcome Back" : "Create Account"}
+        {isLogin ? "Sign in to Urge Relief" : "Let's create your account"}
       </h2>
 
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

@@ -72,6 +72,7 @@ export default function PlayAudioPage() {
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isBreathingActive, setIsBreathingActive] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const [displayText, setDisplayText] = useState<string>("");
   const [currentPhase, setCurrentPhase] = useState<number>(1); 
@@ -143,27 +144,35 @@ export default function PlayAudioPage() {
   }, []);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (audioSrc && audioRef.current && !hasStartedPlaying) {
-      const playPromise = audioRef.current.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          setIsPlaying(true);
-          setHasStartedPlaying(true);
-          posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
-          
-          try {
-            let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
-            localStorage.setItem("lastPlayedTrack", currentTrackPath); 
-            localStorage.setItem("cycleIndex", (index + 1).toString()); 
-          } catch (e) {
-            console.error("Error advancing cycle", e);
-          }
-        }).catch((error) => {
-          console.warn("Autoplay was prevented by the browser. User must click play.", error);
-        });
-      }
+      // Add a wait before starting the audio so the navigation doesn't feel abrupt
+      timer = setTimeout(() => {
+        if (!audioRef.current || hasStartedPlaying) return;
+
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            setIsPlaying(true);
+            setHasStartedPlaying(true);
+            posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
+            
+            try {
+              let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
+              localStorage.setItem("lastPlayedTrack", currentTrackPath); 
+              localStorage.setItem("cycleIndex", (index + 1).toString()); 
+            } catch (e) {
+              console.error("Error advancing cycle", e);
+            }
+          }).catch((error) => {
+            console.warn("Autoplay was prevented by the browser. User must click play.", error);
+          });
+        }
+      }, 2000); // 2-second delay
     }
+
+    return () => clearTimeout(timer);
   }, [audioSrc, trackName, currentTrackPath, hasStartedPlaying, posthog]);
 
   const togglePlay = () => {
@@ -246,10 +255,15 @@ export default function PlayAudioPage() {
   };
 
   const handleExitAudio = async () => {
+    if (isExiting) return;
+    setIsExiting(true);
+
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
       const minutes = Math.floor(timeListened / 60);
       const seconds = timeListened % 60;
+      
+      audioRef.current.pause();
 
       posthog.capture('Audio Session Quit Early', {
         'Track Name': trackName,
@@ -270,10 +284,16 @@ export default function PlayAudioPage() {
         console.error("Error logging drop-off", error);
       }
     }
-    router.push("/dashboard");
+    
+    // Smooth transition out
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 1000);
   };
 
   const handleAudioEnded = async () => {
+    setIsExiting(true);
+
     posthog.capture('Audio Session Fully Completed', {
       'Track Name': trackName,
       'Counted As Successful Session': "Yes"
@@ -291,14 +311,23 @@ export default function PlayAudioPage() {
       }
     }
 
-    router.push("/dashboard");
+    // Wait 2 seconds before pushing so it doesn't jarringly jump right when the audio finishes
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 2000);
   };
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <main suppressHydrationWarning className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent">
+    <motion.main 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isExiting ? 0 : 1 }}
+      transition={{ duration: 1, ease: "easeInOut" }}
+      suppressHydrationWarning 
+      className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent"
+    >
       
       {/* High-Performance Breathing Layer - Triggers for 5s at specific intervals */}
       <AnimatePresence>
@@ -324,7 +353,11 @@ export default function PlayAudioPage() {
         )}
       </AnimatePresence>
 
-      <button onClick={handleExitAudio} className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all">
+      <button 
+        onClick={handleExitAudio} 
+        disabled={isExiting}
+        className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all disabled:opacity-50"
+      >
         <X className="w-6 h-6" />
       </button>
 
@@ -401,6 +434,6 @@ export default function PlayAudioPage() {
         </div>
 
       </motion.div>
-    </main>
+    </motion.main>
   );
 }
