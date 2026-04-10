@@ -56,5 +56,10 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000"
+  "theme_color": "#000000",
+  "description": "A powerful tool designed to help you track, manage, and overcome sudden urges to build a healthier, more disciplined lifestyle.",
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "orientation": "portrait"
 }
