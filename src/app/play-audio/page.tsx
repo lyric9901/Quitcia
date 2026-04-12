@@ -239,7 +239,7 @@ export default function PlayAudioPage() {
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
       // Triggers at 50 seconds and 100 seconds (1:40), staying active for 15 seconds each time
-      const triggerTimes = [50, 100];
+      const triggerTimes = [50, 105];
       const inBreathingWindow = triggerTimes.some(time => current >= time && current < time + 15);
 
       if (isBreathingActive !== inBreathingWindow) {
@@ -368,7 +368,7 @@ export default function PlayAudioPage() {
       className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent"
     >
 
-{/* Smooth Glass Wipe Animation on Exit */}
+      {/* Smooth Glass Wipe Animation on Exit */}
       <AnimatePresence>
         {isExiting && (
           <motion.div
