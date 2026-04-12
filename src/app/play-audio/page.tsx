@@ -238,8 +238,8 @@ export default function PlayAudioPage() {
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
-      // Triggers at 50 seconds and 100 seconds (1:40), staying active for 15 seconds each time
-      const triggerTimes = [50, 105];
+      // Triggers at 50 seconds and 117 seconds (1:40), staying active for 15 seconds each time
+      const triggerTimes = [50, 117];
       const inBreathingWindow = triggerTimes.some(time => current >= time && current < time + 15);
 
       if (isBreathingActive !== inBreathingWindow) {

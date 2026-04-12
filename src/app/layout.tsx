@@ -66,7 +66,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Urge Relief - Rewire Your Habits",
+    title: "Urge Relief - Change Your Habits",
     description: "Master your urges and build a better you.",
     images: ["/og-image.jpg"],
   },
