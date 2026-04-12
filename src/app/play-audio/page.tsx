@@ -31,14 +31,14 @@ const PHASE_1_TEXTS = [
   "Stay here. The intensity will pass.",
   "Pause for a moment. Just listen.",
   "Stay here with me for a minute.",
- "Nothing needs to happen right now.",
- "Let this moment slow down.",
- "Take one steady breath and stay here.",
- "You're safe to pause for a moment.",
- "Just press play and stay present.",
- "Let the urge sit without reacting.",
- "Give yourself this small pause.",
- "Stay here. The intensity will pass.",
+  "Nothing needs to happen right now.",
+  "Let this moment slow down.",
+  "Take one steady breath and stay here.",
+  "You're safe to pause for a moment.",
+  "Just press play and stay present.",
+  "Let the urge sit without reacting.",
+  "Give yourself this small pause.",
+  "Stay here. The intensity will pass.",
 ];
 
 // Phase 2 (45 to 95 seconds [1:35])
@@ -54,15 +54,15 @@ const PHASE_2_TEXTS = [
   "You're handling this moment.",
   "Stay with the calm you're building.",
   "You're doing well. Keep staying here.",
-"The urge is already changing.",
-"Just keep breathing and listening.",
-"Notice how the intensity shifts.",
-"Stay steady for a few more breaths.",
-"You're riding out the wave.",
-"Each moment you wait weakens it.",
-"Let your mind settle naturally.",
-"You're handling this moment.",
-"Stay with the calm you're building."
+  "The urge is already changing.",
+  "Just keep breathing and listening.",
+  "Notice how the intensity shifts.",
+  "Stay steady for a few more breaths.",
+  "You're riding out the wave.",
+  "Each moment you wait weakens it.",
+  "Let your mind settle naturally.",
+  "You're handling this moment.",
+  "Stay with the calm you're building."
 ];
 
 // Phase 3 (1:35 [95 seconds] onwards)
@@ -95,7 +95,7 @@ export default function PlayAudioPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
-  
+
   const [audioSrc, setAudioSrc] = useState<string>("");
   const [trackName, setTrackName] = useState<string>("Unknown Track");
   const [currentTrackPath, setCurrentTrackPath] = useState<string>("");
@@ -105,12 +105,12 @@ export default function PlayAudioPage() {
   const [isExiting, setIsExiting] = useState(false);
 
   const [displayText, setDisplayText] = useState<string>("");
-  const [currentPhase, setCurrentPhase] = useState<number>(1); 
-  
+  const [currentPhase, setCurrentPhase] = useState<number>(1);
+
   const [logged26s, setLogged26s] = useState(false);
   const [logged30s, setLogged30s] = useState(false);
   const [logged60s, setLogged60s] = useState(false);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function PlayAudioPage() {
   }, []);
 
   useEffect(() => {
-    let objectUrl = ""; 
+    let objectUrl = "";
 
     const loadAudio = async () => {
       let cycle: string[] = [];
@@ -135,7 +135,7 @@ export default function PlayAudioPage() {
 
       if (!Array.isArray(cycle) || cycle.length !== AUDIO_TRACKS.length || index >= cycle.length || isNaN(index)) {
         cycle = [...AUDIO_TRACKS];
-        
+
         for (let i = cycle.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [cycle[i], cycle[j]] = [cycle[j], cycle[i]];
@@ -153,7 +153,7 @@ export default function PlayAudioPage() {
 
       const selectedTrack = cycle[index];
       setCurrentTrackPath(selectedTrack);
-      
+
       const cleanName = selectedTrack.replace('/audio/', '').replace('.mp3', '').replace('track', 'Track ');
       setTrackName(cleanName);
 
@@ -181,17 +181,17 @@ export default function PlayAudioPage() {
         if (!audioRef.current || hasStartedPlaying) return;
 
         const playPromise = audioRef.current.play();
-        
+
         if (playPromise !== undefined) {
           playPromise.then(() => {
             setIsPlaying(true);
             setHasStartedPlaying(true);
             posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
-            
+
             try {
               let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
-              localStorage.setItem("lastPlayedTrack", currentTrackPath); 
-              localStorage.setItem("cycleIndex", (index + 1).toString()); 
+              localStorage.setItem("lastPlayedTrack", currentTrackPath);
+              localStorage.setItem("cycleIndex", (index + 1).toString());
             } catch (e) {
               console.error("Error advancing cycle", e);
             }
@@ -212,15 +212,15 @@ export default function PlayAudioPage() {
         posthog.capture('Audio Paused', { 'Track Name': trackName });
       } else {
         audioRef.current.play();
-        
+
         if (!hasStartedPlaying) {
           setHasStartedPlaying(true);
           posthog.capture('Audio Therapy Started', { 'Track Name': trackName });
-          
+
           try {
             let index = parseInt(localStorage.getItem("cycleIndex") || "0", 10);
-            localStorage.setItem("lastPlayedTrack", currentTrackPath); 
-            localStorage.setItem("cycleIndex", (index + 1).toString()); 
+            localStorage.setItem("lastPlayedTrack", currentTrackPath);
+            localStorage.setItem("cycleIndex", (index + 1).toString());
           } catch (e) {
             console.error("Error advancing cycle", e);
           }
@@ -238,10 +238,10 @@ export default function PlayAudioPage() {
       if (audioRef.current.duration > 0) setProgress((current / audioRef.current.duration) * 100);
       setCurrentTimeStr(`${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`);
 
-      // Trigger breathing animation for 5 seconds at specific intervals (1:00, 1:40, 2:20, etc.)
-      const triggerTimes = [60, 100, 140, 180, 220, 260, 300, 340, 380, 420];
-      const inBreathingWindow = triggerTimes.some(time => current >= time && current < time + 5);
-      
+      // Triggers at 50 seconds and 100 seconds (1:40), staying active for 15 seconds each time
+      const triggerTimes = [50, 100];
+      const inBreathingWindow = triggerTimes.some(time => current >= time && current < time + 15);
+
       if (isBreathingActive !== inBreathingWindow) {
         setIsBreathingActive(inBreathingWindow);
       }
@@ -287,19 +287,19 @@ export default function PlayAudioPage() {
   const handleExitAudio = () => {
     if (isExiting) return;
     setIsExiting(true);
-    
+
     // Save the exact time the user exits
     localStorage.setItem("lastAudioExitTime", Date.now().toString());
 
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
-      
+
       // Save how many seconds were listened to
       localStorage.setItem("lastAudioListenedDuration", timeListened.toString());
-      
+
       const minutes = Math.floor(timeListened / 60);
       const seconds = timeListened % 60;
-      
+
       audioRef.current.pause();
 
       posthog.capture('Audio Session Quit Early', {
@@ -318,7 +318,7 @@ export default function PlayAudioPage() {
         timestamp: serverTimestamp()
       }).catch((error) => console.error("Error logging drop-off", error));
     }
-    
+
     // Instant transition out (removed the 1000ms setTimeout)
     router.push("/dashboard");
   };
@@ -336,7 +336,7 @@ export default function PlayAudioPage() {
 
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.duration || 0);
-      
+
       // NEW: Save the completed duration
       localStorage.setItem("lastAudioListenedDuration", timeListened.toString());
 
@@ -353,47 +353,61 @@ export default function PlayAudioPage() {
 
     setTimeout(() => {
       router.push("/dashboard");
-    }, 2000);
+    }, 800); // Short delay to allow the final animation to play
   };
 
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
 
   return (
-      <motion.main 
+    <motion.main
       initial={{ opacity: 0 }}
-      animate={{ opacity: isExiting ? 0 : 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }} // Reduced duration from 1s to 0.3s
-      suppressHydrationWarning  
+      animate={{ opacity: 1 }} // Keep opacity at 1 so it doesn't turn black
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      suppressHydrationWarning
       className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent"
     >
-      
+
+{/* Smooth Glass Wipe Animation on Exit */}
+      <AnimatePresence>
+        {isExiting && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: "0%" }}
+            transition={{ duration: 0.8, ease: [0.65, 0, 0.35, 1] }} // Smooth cinematic easing
+            className="absolute inset-0 z-[100] bg-white/20 backdrop-blur-2xl border-t border-white/40 shadow-[0_-20px_50px_rgba(255,255,255,0.1)] pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
+
       {/* High-Performance Breathing Layer - Triggers for 5s at specific intervals */}
       <AnimatePresence>
         {isMounted && isBreathingActive && (
-          <motion.div 
+          <motion.div
             initial={{ scale: 1, opacity: 0 }}
             animate={{
               scale: [1, 1.4, 1.4, 1],
-              opacity: [0, 0.9, 0.9, 0], 
+              opacity: [0, 0.9, 0.9, 0],
             }}
             exit={{ opacity: 0, transition: { duration: 0.5 } }}
             transition={{
-              duration: 5, 
+              duration: 3.75,       // 15 seconds total / 4 cycles = 3.75s per cycle
               ease: "easeInOut",
-              times: [0, 0.4, 0.5, 1] 
+              times: [0, 0.4, 0.5, 1],
+              repeat: Infinity,     // Loops continuously while the 15s window is active
+              repeatType: "loop"    // Ensures a seamless loop
             }}
             className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
             style={{
               background: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, #a6c3f5 45%, transparent 80%)',
-              willChange: 'transform, opacity' 
+              willChange: 'transform, opacity'
             }}
           />
         )}
       </AnimatePresence>
 
-      <button 
-        onClick={handleExitAudio} 
+      <button
+        onClick={handleExitAudio}
         disabled={isExiting}
         className="absolute top-6 right-6 text-white/80 hover:text-white z-50 p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-all disabled:opacity-50"
       >
@@ -403,27 +417,27 @@ export default function PlayAudioPage() {
       {audioSrc && <audio ref={audioRef} src={audioSrc} onTimeUpdate={handleTimeUpdate} onEnded={handleAudioEnded} />}
 
       <motion.div initial={false} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center w-full h-full relative z-20">
-        
+
         <div className="relative flex items-center justify-center">
           <div className="absolute inset-0 z-30 rounded-full pointer-events-none" />
-          
+
           <svg className="transform -rotate-90 w-[280px] h-[280px]">
             <circle cx="140" cy="140" r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="transparent" />
-            <motion.circle 
+            <motion.circle
               initial={false}
-              cx="140" 
-              cy="140" 
-              r={radius} 
+              cx="140"
+              cy="140"
+              r={radius}
               stroke="#ffffff"
-              strokeWidth="8" 
-              fill="transparent" 
-              strokeLinecap="round" 
-              animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }} 
-              style={{ strokeDasharray: circumference }} 
-              transition={{ ease: "linear", duration: 0.2 }} 
+              strokeWidth="8"
+              fill="transparent"
+              strokeLinecap="round"
+              animate={{ strokeDashoffset: circumference - (progress / 100) * circumference }}
+              style={{ strokeDasharray: circumference }}
+              transition={{ ease: "linear", duration: 0.2 }}
             />
           </svg>
-          
+
           <div className="absolute z-40 flex flex-col items-center justify-center">
             <button onClick={togglePlay} className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg rounded-full flex items-center justify-center border border-white/30 transition-all">
               {isPlaying ? <Pause className="w-8 h-8 fill-white text-white" /> : <Play className="w-8 h-8 fill-white text-white ml-1" />}
@@ -433,31 +447,31 @@ export default function PlayAudioPage() {
             </span>
           </div>
         </div>
-        
+
         <div className="h-16 flex items-center justify-center mt-10 px-8 text-center">
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
               key={displayText}
-              initial={{ 
-                opacity: 0, 
-                y: 5, 
-                filter: "blur(12px)", 
-                backgroundPosition: "100% 0" 
+              initial={{
+                opacity: 0,
+                y: 5,
+                filter: "blur(12px)",
+                backgroundPosition: "100% 0"
               }}
-              animate={{ 
-                opacity: 1, 
-                y: 0, 
-                filter: "blur(0px)", 
-                backgroundPosition: "0% 0" 
+              animate={{
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                backgroundPosition: "0% 0"
               }}
-              exit={{ 
-                opacity: 0, 
-                y: -5, 
-                filter: "blur(8px)" 
+              exit={{
+                opacity: 0,
+                y: -5,
+                filter: "blur(8px)"
               }}
-              transition={{ 
-                duration: 1.2, 
-                ease: "easeOut" 
+              transition={{
+                duration: 1.2,
+                ease: "easeOut"
               }}
               className="text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               style={{

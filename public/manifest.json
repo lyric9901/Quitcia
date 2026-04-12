@@ -61,5 +61,13 @@
   "lang": "en",
   "dir": "ltr",
   "scope": "/",
+  
   "orientation": "portrait"
+  
+  "categories":[
+    "fitness",
+    "personalization",
+    "productivity",
+    "utilities"
+  ]
 }
