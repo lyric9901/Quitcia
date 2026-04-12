@@ -199,7 +199,7 @@ export default function PlayAudioPage() {
             console.warn("Autoplay was prevented by the browser. User must click play.", error);
           });
         }
-      }, 2000); // 2-second delay
+      }, 565); // 2-second delay
     }
 
     return () => clearTimeout(timer);
@@ -284,7 +284,7 @@ export default function PlayAudioPage() {
     }
   };
 
-  const handleExitAudio = async () => {
+  const handleExitAudio = () => {
     if (isExiting) return;
     setIsExiting(true);
     
@@ -294,7 +294,7 @@ export default function PlayAudioPage() {
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
       
-      // NEW: Save how many seconds were listened to
+      // Save how many seconds were listened to
       localStorage.setItem("lastAudioListenedDuration", timeListened.toString());
       
       const minutes = Math.floor(timeListened / 60);
@@ -311,21 +311,16 @@ export default function PlayAudioPage() {
         'Hit 60s Milestone': timeListened >= 60 ? "Yes" : "No"
       });
 
-      try {
-        await addDoc(collection(db, "audio_sessions"), {
-          status: "dropped",
-          timeListened: timeListened,
-          timestamp: serverTimestamp()
-        });
-      } catch (error) {
-        console.error("Error logging drop-off", error);
-      }
+      // Fire-and-forget: we remove "await" so it logs in the background without delaying the exit
+      addDoc(collection(db, "audio_sessions"), {
+        status: "dropped",
+        timeListened: timeListened,
+        timestamp: serverTimestamp()
+      }).catch((error) => console.error("Error logging drop-off", error));
     }
     
-    // Smooth transition out
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 1000);
+    // Instant transition out (removed the 1000ms setTimeout)
+    router.push("/dashboard");
   };
 
   const handleAudioEnded = async () => {
@@ -365,11 +360,11 @@ export default function PlayAudioPage() {
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <motion.main 
+      <motion.main 
       initial={{ opacity: 0 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
-      transition={{ duration: 1, ease: "easeInOut" }}
-      suppressHydrationWarning 
+      transition={{ duration: 0.3, ease: "easeOut" }} // Reduced duration from 1s to 0.3s
+      suppressHydrationWarning  
       className="flex flex-col items-center justify-center h-[100dvh] bg-[#5e83c2] overflow-hidden relative selection:bg-transparent"
     >
       

@@ -136,66 +136,51 @@ const ReflectionModal = ({ onClose }: { onClose: () => void }) => {
 // --- ORB MODAL ---
 const OrbModal = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
-  const [isWiping, setIsWiping] = useState(false);
   
   useEffect(() => {
-    // 1. Orb animation runs for 5s, then trigger the glass wipe fade
-    const wipeTimer = setTimeout(() => {
-      setIsWiping(true);
-    }, 5000);
-
-    // 2. Wait for the 0.5s wipe animation to finish, then switch routes
-    const routeTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       router.push("/play-audio");
-    }, 5500); 
-
-    return () => {
-      clearTimeout(wipeTimer);
-      clearTimeout(routeTimer);
-    };
+    }, 8000); 
+    return () => clearTimeout(timer);
   }, [router]);
 
   return (
     <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] backdrop-blur-xl overflow-hidden"
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-b from-[#E6F4F8] via-[#D9EEF4] to-[#FFFFFF] backdrop-blur-xl"
     >
-      {/* Fast Glass Wipe Effect */}
-      <AnimatePresence>
-        {isWiping && (
-          <motion.div
-            initial={{ opacity: 0, x: '10%' }}
-            animate={{ opacity: 1, x: '0%' }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="absolute inset-0 z-[70] bg-white/70 backdrop-blur-2xl"
-          />
-        )}
-      </AnimatePresence>
-
-      <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all">
+      <button 
+        onClick={onClose} 
+        className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 z-50 p-3 bg-black/5 hover:bg-black/10 rounded-full backdrop-blur-md transition-all"
+      >
         <X className="w-6 h-6" />
       </button>
-
-      <div className="flex flex-col items-center justify-center w-full h-full relative z-10">
+      
+      <div className="flex flex-col items-center justify-center w-full h-full relative">
         <motion.div 
-          animate={{ scale: [1.0, 1.4, 0.6], opacity: [0.4, 0.6, 0] }} 
-          transition={{ duration: 5, times: [0, 0.6, 1], ease: "easeInOut" }} 
-          style={{ willChange: "transform, opacity" }}
-          className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl absolute" 
+          animate={{ scale: [1.0, 1.35, 1.0] }} 
+          transition={{ duration: 8, times: [0, 0.8, 1], ease: "easeInOut" }} 
+          style={{ willChange: "transform" }}
+          className="w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 blur-3xl opacity-40 absolute" 
         />
+        
         <motion.div 
-          animate={{ scale: [1.0, 1.4, 0.6], opacity: [1, 1, 0] }} 
-          transition={{ duration: 5, times: [0, 0.6, 1], ease: "easeInOut" }} 
-          style={{ willChange: "transform, opacity" }}
+          animate={{ scale: [1.0, 1.35, 1.0] }} 
+          transition={{ duration: 8, times: [0, 0.8, 1], ease: "easeInOut" }} 
+          style={{ willChange: "transform" }}
           className="w-48 h-48 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-300 shadow-[0_0_80px_rgba(96,165,250,0.5)] z-10" 
         />
+        
         <motion.p 
           initial={{ opacity: 0, y: 15 }} 
-          animate={{ opacity: [0, 1, 0], y: [15, 0, -10] }} 
-          transition={{ duration: 5, times: [0, 0.2, 1], ease: "easeInOut" }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.3, duration: 1.5, ease: "easeOut" }} 
           className="text-slate-800 mt-24 text-xl font-medium tracking-wide z-20 text-center px-6"
         >
-          Just stay here, forget everything.
+          Pause for a moment, listen to audio.
         </motion.p>
       </div>
     </motion.div>
@@ -274,7 +259,7 @@ export default function DashboardPage() {
       } catch (error) { console.error("Error logging urge:", error); }
     }
 
-    // --- SKIP ORB IF <= 20 SECONDS AND LISTENED >= 30 SECONDS ---
+    // --- SKIP ORB IF <= 20 SECONDS OR LISTENED >= 30 SECONDS ---
     const lastAudioTime = localStorage.getItem("lastAudioExitTime") || localStorage.getItem("lastAudioCompletionTime");
     const lastAudioDurationStr = localStorage.getItem("lastAudioListenedDuration");
 
@@ -282,8 +267,8 @@ export default function DashboardPage() {
       const timeElapsed = Date.now() - parseInt(lastAudioTime, 10);
       const timeListened = parseInt(lastAudioDurationStr, 10);
       
-      // Check if it's been under 20 seconds AND they listened for at least 30 seconds
-      if (timeElapsed <= 20000 && timeListened >= 30) { 
+      // Changed && to || so it bypasses if EITHER condition is true
+      if (timeListened >= 30) { 
         router.push("/play-audio");
         return; 
       }

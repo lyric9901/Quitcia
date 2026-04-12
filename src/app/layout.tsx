@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import InstallPopup from '@/components/InstallPopup';
 import OfflineManager from "@/components/OfflineManager";
 
 import { PostHogProvider } from "@/providers/PostHogProvider";
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     "mental health app",
     "quitcia",
   ],
-  authors: [{ name: "Shah Nawaz" }],
+  authors: [{ name: "Shah Nawaz" }], // Note: You might want to update this if you are the primary author!
   creator: "Quitcia",
   manifest: "/manifest.json",
   verification: {
@@ -93,6 +94,10 @@ export default function RootLayout({
           {children}
           <OfflineManager />
         </PostHogProvider>
+        
+        {/* Render the PWA Install Popup globally */}
+        <InstallPopup />
+        
         <Analytics />
       </body>
     </html>
