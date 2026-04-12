@@ -28,7 +28,17 @@ const PHASE_1_TEXTS = [
   "Just press play and stay present.",
   "Let the urge sit without reacting.",
   "Give yourself this small pause.",
-  "Stay here. The intensity will pass."
+  "Stay here. The intensity will pass.",
+  "Pause for a moment. Just listen.",
+  "Stay here with me for a minute.",
+ "Nothing needs to happen right now.",
+ "Let this moment slow down.",
+ "Take one steady breath and stay here.",
+ "You're safe to pause for a moment.",
+ "Just press play and stay present.",
+ "Let the urge sit without reacting.",
+ "Give yourself this small pause.",
+ "Stay here. The intensity will pass.",
 ];
 
 // Phase 2 (45 to 95 seconds [1:35])
@@ -42,11 +52,31 @@ const PHASE_2_TEXTS = [
   "Each moment you wait weakens it.",
   "Let your mind settle naturally.",
   "You're handling this moment.",
-  "Stay with the calm you're building."
+  "Stay with the calm you're building.",
+  "You're doing well. Keep staying here.",
+"The urge is already changing.",
+"Just keep breathing and listening.",
+"Notice how the intensity shifts.",
+"Stay steady for a few more breaths.",
+"You're riding out the wave.",
+"Each moment you wait weakens it.",
+"Let your mind settle naturally.",
+"You're handling this moment.",
+"Stay with the calm you're building."
 ];
 
 // Phase 3 (1:35 [95 seconds] onwards)
 const PHASE_3_TEXTS = [
+  "You're almost through the wave.",
+  "The moment is passing now.",
+  "Take one more calm breath.",
+  "You stayed through the hardest part.",
+  "Notice how the urge has softened.",
+  "This pause helped you regain control.",
+  "Stay calm for a few more seconds.",
+  "You're finishing strong.",
+  "The intensity has passed.",
+  "Take this calm with you.",
   "You're almost through the wave.",
   "The moment is passing now.",
   "Take one more calm breath.",
@@ -258,11 +288,15 @@ export default function PlayAudioPage() {
     if (isExiting) return;
     setIsExiting(true);
     
-    // NEW: Save the exact time the user exits the audio player
+    // Save the exact time the user exits
     localStorage.setItem("lastAudioExitTime", Date.now().toString());
 
     if (audioRef.current) {
       const timeListened = Math.floor(audioRef.current.currentTime);
+      
+      // NEW: Save how many seconds were listened to
+      localStorage.setItem("lastAudioListenedDuration", timeListened.toString());
+      
       const minutes = Math.floor(timeListened / 60);
       const seconds = timeListened % 60;
       
@@ -297,7 +331,7 @@ export default function PlayAudioPage() {
   const handleAudioEnded = async () => {
     setIsExiting(true);
 
-    // NEW: Save the exact time the audio player completes
+    // Save the exact time the audio player completes
     localStorage.setItem("lastAudioExitTime", Date.now().toString());
 
     posthog.capture('Audio Session Fully Completed', {
@@ -306,10 +340,15 @@ export default function PlayAudioPage() {
     });
 
     if (audioRef.current) {
+      const timeListened = Math.floor(audioRef.current.duration || 0);
+      
+      // NEW: Save the completed duration
+      localStorage.setItem("lastAudioListenedDuration", timeListened.toString());
+
       try {
         await addDoc(collection(db, "audio_sessions"), {
           status: "completed",
-          timeListened: Math.floor(audioRef.current.duration || 0),
+          timeListened: timeListened,
           timestamp: serverTimestamp()
         });
       } catch (error) {
@@ -317,7 +356,6 @@ export default function PlayAudioPage() {
       }
     }
 
-    // Wait 2 seconds before pushing so it doesn't jarringly jump right when the audio finishes
     setTimeout(() => {
       router.push("/dashboard");
     }, 2000);
