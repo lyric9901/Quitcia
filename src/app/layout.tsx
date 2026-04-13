@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     siteName: "Urge Relief",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/public/icon-512x512.png",
         width: 1200,
         height: 630,
         alt: "Urge Relief App Preview",
