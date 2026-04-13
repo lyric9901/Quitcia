@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     template: "%s | Urge Relief",
-    default: "Urge Relief - Rewire Your Habits",
+    default: "Urge Relief - change Your Habits",
   },
   description:
     "Overcome urges, build better habits, and track your daily progress with scientifically-backed audio therapy and mindfulness.",
