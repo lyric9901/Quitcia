@@ -7,6 +7,7 @@ import OfflineManager from "@/components/OfflineManager";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import PostHogPageView from "@/components/PostHogPageView";
 
+
 import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
