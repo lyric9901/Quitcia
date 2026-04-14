@@ -65,6 +65,7 @@ export default function InstallPopup() {
           This app isn’t on the Play Store yet. Download the APK by clicking on button below to get early access
         </p>
 
+
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
           <button
