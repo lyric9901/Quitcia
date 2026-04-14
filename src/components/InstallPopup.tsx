@@ -3,68 +3,30 @@
 import { useEffect, useState } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 
-// Define the standard PWA event interface
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
 export default function InstallPopup() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
-      // Check if the user already dismissed it in this session to avoid annoying them
-      const hasDismissed = sessionStorage.getItem('installPromptDismissed');
-      if (!hasDismissed) {
-        setShowPopup(true);
-      }
-    };
-
-    const handleAppInstalled = () => {
-      // Clear the prompt and hide popup when successfully installed
-      setDeferredPrompt(null);
-      setShowPopup(false);
-      console.log('PWA installed successfully');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
+    // Check if the user already dismissed it in this session to avoid annoying them
+    const hasDismissed = sessionStorage.getItem('installPromptDismissed');
+    if (!hasDismissed) {
+      setShowPopup(true);
+    }
   }, []);
 
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-
-    // Show the actual browser install prompt
-    await deferredPrompt.prompt();
-
-    // Wait for the user to respond
-    const { outcome } = await deferredPrompt.userChoice;
+  const handleInstall = () => {
+    // URL to the base.apk file
+    const apkUrl = 'https://pub-978950eef49c492085cdafeca0b26f00.r2.dev/base.apk';
     
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-
-    // We can no longer use the prompt, so clear it
-    setDeferredPrompt(null);
+    // Create an invisible anchor element to trigger the download
+    const link = document.createElement('a');
+    link.href = apkUrl;
+    link.download = 'UrgeRelief.apk'; // Suggests a filename for the download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Hide the popup after initiating the download
     setShowPopup(false);
   };
 
@@ -100,7 +62,7 @@ export default function InstallPopup() {
         </h3>
         
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Add this app to your home screen for faster access, offline capabilities, and a full-screen experience.
+          This app isn’t on the Play Store yet. Download the APK by clicking on button below to get early access
         </p>
 
         {/* Action Buttons */}
@@ -110,7 +72,7 @@ export default function InstallPopup() {
             className="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-[0.98]"
           >
             <Download className="w-5 h-5" />
-            Install App
+            Download APK
           </button>
           
           <button
