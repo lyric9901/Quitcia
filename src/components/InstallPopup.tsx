@@ -17,7 +17,7 @@ export default function InstallPopup() {
   const handleInstall = () => {
     // URL to the base.apk file
     const apkUrl = 'https://pub-978950eef49c492085cdafeca0b26f00.r2.dev/base.apk';
-    
+
     // Create an invisible anchor element to trigger the download
     const link = document.createElement('a');
     link.href = apkUrl;
@@ -25,7 +25,7 @@ export default function InstallPopup() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Hide the popup after initiating the download
     setShowPopup(false);
   };
@@ -42,9 +42,9 @@ export default function InstallPopup() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 text-center overflow-hidden">
-        
+
         {/* Close Button */}
-        <button 
+        <button
           onClick={handleDismiss}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
           aria-label="Close"
@@ -56,13 +56,14 @@ export default function InstallPopup() {
         <div className="mx-auto w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
           <Smartphone className="w-8 h-8" />
         </div>
-        
+
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
           Install Urge Relief
         </h3>
-        
+
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           This app isn’t on the Play Store yet. Download the APK by clicking on button below to get early access
+          Note: if you see any popup inside the app, just ignore it and use the app as normal.
         </p>
 
 
@@ -75,7 +76,7 @@ export default function InstallPopup() {
             <Download className="w-5 h-5" />
             Download APK
           </button>
-          
+
           <button
             onClick={handleDismiss}
             className="w-full text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 py-2"
