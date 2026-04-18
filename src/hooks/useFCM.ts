@@ -1,3 +1,4 @@
+// src/hooks/useFCM.ts
 import { useEffect, useState } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { messaging } from '@/lib/firebase';
@@ -11,18 +12,15 @@ export const useFCM = () => {
       try {
         if (!messaging) return;
 
-        // Request user permission for notifications
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          // Get the FCM token for this device
-          // You need to generate a VAPID key in the Firebase Console -> Project Settings -> Cloud Messaging -> Web Push certificates
           const token = await getToken(messaging, {
             vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY, 
           });
           
           if (token) {
             setFcmToken(token);
-            console.log('FCM Token:', token); // Save this token to your Firestore database so you can target this user later
+            console.log('FCM Token:', token); 
           }
         }
       } catch (error) {
@@ -32,19 +30,23 @@ export const useFCM = () => {
 
     requestPermission();
 
-    // Listen for incoming messages while the app is actively open (foreground)
+    // Handle Foreground Notifications
     if (messaging) {
       const unsubscribe = onMessage(messaging, (payload) => {
         console.log('Foreground message received:', payload);
-        // Trigger your react-hot-toast notification
+        
+        // This triggers your react-hot-toast UI
         toast(
           `${payload.notification?.title}: ${payload.notification?.body}`,
-          { duration: 4000 }
+          { 
+            duration: 4000,
+            icon: '🔔',
+          }
         );
       });
 
       return () => {
-        unsubscribe(); // Cleanup listener on unmount
+        unsubscribe(); 
       };
     }
   }, []);
