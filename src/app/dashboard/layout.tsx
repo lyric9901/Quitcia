@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
+// src/app/dashboard/layout.tsx (or similar)
+"use client";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Log your urges, complete daily relief tasks, and practice breathing exercises.",
-};
+import { useFCM } from "@/hooks/useFCM";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  // Calling this will trigger the browser permission prompt
+  const { fcmToken } = useFCM(); 
+
+  return (
+    <div>
+      {children}
+    </div>
+  );
 }
