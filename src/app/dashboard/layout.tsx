@@ -1,15 +1,20 @@
-// src/app/dashboard/layout.tsx (or similar)
-"use client";
+import DailyCheckIn from "@/components/DailyCheckIn";
+import BottomNav from "@/components/BottomNav"; // Assuming you have this
 
-import { useFCM } from "@/hooks/useFCM";
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Calling this will trigger the browser permission prompt
-  const { fcmToken } = useFCM(); 
-
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      {children}
-    </div>
+    // Wrap the entire dashboard experience in the DailyCheckIn gatekeeper
+    <DailyCheckIn>
+      <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-[#09090B]">
+        <main className="flex-1 pb-20"> {/* pb-20 leaves room for BottomNav */}
+          {children}
+        </main>
+        <BottomNav />
+      </div>
+    </DailyCheckIn>
   );
 }
