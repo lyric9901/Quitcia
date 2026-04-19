@@ -7,6 +7,7 @@ import OfflineManager from "@/components/OfflineManager";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import PostHogPageView from "@/components/PostHogPageView";
 
+import WelcomeSocialPopup from "@/components/WelcomeSocialPopup";
 
 import { Analytics } from "@vercel/analytics/next";
 
@@ -95,6 +96,8 @@ export default function RootLayout({
           {children}
           <OfflineManager />
         </PostHogProvider>
+        {/* Render the First-Time Social Popup */}
+        <WelcomeSocialPopup />
         
         {/* Render the PWA Install Popup globally */}
         <InstallPopup />
