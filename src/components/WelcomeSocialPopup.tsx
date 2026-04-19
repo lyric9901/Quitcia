@@ -13,15 +13,20 @@ export default function WelcomeSocialPopup() {
     }
   }, []);
 
-  const handleClose = () => {
-    setIsVisible(false);
+  // Saves to local storage, but leaves the popup visible
+  const markAsSeen = () => {
     localStorage.setItem("hasSeenSocialPopup", "true");
+  };
+
+  // Saves to local storage AND hides the popup
+  const handleClose = () => {
+    markAsSeen();
+    setIsVisible(false);
   };
 
   if (!isVisible) return null;
 
   return (
-    // Note: Clicking the backdrop (bg-black/80) does not trigger handleClose, enforcing the requirement
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 px-4 backdrop-blur-sm animate-in fade-in duration-300">
       
       {/* The main card container */}
@@ -57,7 +62,7 @@ export default function WelcomeSocialPopup() {
             href="https://www.reddit.com/r/UrgeSurfing/s/k9iLCHWfBC"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleClose}
+            onClick={markAsSeen} // <--- Replaced handleClose with markAsSeen
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#FF4500] px-4 py-3.5 text-[15px] font-semibold text-white transition-all hover:bg-[#FF4500]/90 active:scale-[0.98]"
           >
             <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
@@ -70,7 +75,7 @@ export default function WelcomeSocialPopup() {
             href="https://t.me/accountabilitypartne"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleClose}
+            onClick={markAsSeen} // <--- Replaced handleClose with markAsSeen
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#2AABEE] px-4 py-3.5 text-[15px] font-semibold text-white transition-all hover:bg-[#2AABEE]/90 active:scale-[0.98]"
           >
             <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
