@@ -27,20 +27,20 @@ export default function WelcomeSocialPopup() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#09090B] px-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-white px-6 animate-in fade-in duration-300">
       
       {/* Main Content Area (Vertically & Horizontally Centered) */}
       <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-center mx-auto">
         
         {/* Header Section */}
         <div className="mb-10 text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/20">
-            <svg className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50">
+            <svg className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h2 className="mb-3 text-3xl font-bold tracking-tight text-white">Join the Community</h2>
-          <p className="text-[15px] leading-relaxed text-gray-400">
+          <h2 className="mb-3 text-3xl font-bold tracking-tight text-gray-900">Join the Community</h2>
+          <p className="text-[15px] leading-relaxed text-gray-600">
             Connect with others, share your progress, and stay accountable on your journey.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function WelcomeSocialPopup() {
       <div className="flex w-full justify-center pb-10 pt-4">
         <button
           onClick={handleClose}
-          className="text-[15px] font-medium text-gray-500 transition-colors hover:text-white"
+          className="text-[15px] font-medium text-gray-500 transition-colors hover:text-gray-900"
         >
           Skip for now
         </button>
