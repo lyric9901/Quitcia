@@ -21,11 +21,25 @@ export default function WelcomeSocialPopup() {
   if (!isVisible) return null;
 
   return (
+    // Note: Clicking the backdrop (bg-black/80) does not trigger handleClose, enforcing the requirement
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 px-4 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-[340px] overflow-hidden rounded-3xl bg-[#1C1C1E] shadow-2xl border border-white/10">
+      
+      {/* The main card container */}
+      <div className="relative w-full max-w-[340px] overflow-hidden rounded-3xl bg-[#1C1C1E] shadow-2xl border border-white/10">
         
+        {/* Top-Right Close Icon */}
+        <button
+          onClick={handleClose}
+          className="absolute right-4 top-4 rounded-full p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white focus:outline-none"
+          aria-label="Close popup"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Header Section */}
-        <div className="px-6 pb-4 pt-8 text-center">
+        <div className="px-6 pb-4 pt-10 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/20">
             <svg className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -38,7 +52,7 @@ export default function WelcomeSocialPopup() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-3 px-6 pb-6 mt-2">
+        <div className="flex flex-col gap-3 px-6 pb-8 mt-2">
           <a
             href="https://www.reddit.com/r/UrgeSurfing/s/k9iLCHWfBC"
             target="_blank"
@@ -64,16 +78,6 @@ export default function WelcomeSocialPopup() {
             </svg>
             Telegram Channel
           </a>
-        </div>
-
-        {/* Dismiss Button */}
-        <div className="border-t border-white/5">
-          <button
-            onClick={handleClose}
-            className="w-full py-4 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            Not right now
-          </button>
         </div>
 
       </div>
