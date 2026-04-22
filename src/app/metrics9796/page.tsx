@@ -4,31 +4,46 @@
 import { useEffect, useState, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { Activity, Target, Hash, RefreshCw, Clock, TrendingDown, Trash2, Database, ChevronDown, Headphones } from "lucide-react";
+import { 
+  Activity, Target, Hash, RefreshCw, Clock, TrendingDown, 
+  Trash2, Database, ChevronDown, Headphones, Users, Calendar, Sun
+} from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell as BarCell,
   PieChart, Pie, Cell as PieCell, Legend, AreaChart, Area
 } from 'recharts';
 
+interface UserData {
+  id: string;
+  createdAt?: any;
+}
+
 interface ReflectionData {
   id: string;
   intensity: number;
   resolution: string;
+  userId?: string;
 }
 
 interface AudioSessionData {
   id: string;
   status: string;
   timeListened: number;
+  userId?: string;     // Required for frequency & retention tracking
+  timestamp?: any;     // Required for time-based & retention tracking
+  eventName?: string;  // e.g., 'audio_start'
 }
 
 const INTENSITY_COLORS = ['#38bdf8', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7'];
 const RESOLUTION_COLORS = ['#f97316', '#10b981']; 
+const FREQUENCY_COLORS = ['#94a3b8', '#38bdf8', '#8b5cf6'];
+const TIME_BLOCK_COLORS = ['#fde047', '#fb923c', '#818cf8', '#312e81'];
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   
+  const [users, setUsers] = useState<UserData[]>([]);
   const [reflections, setReflections] = useState<ReflectionData[]>([]);
   const [audioSessions, setAudioSessions] = useState<AudioSessionData[]>([]);
   
@@ -38,7 +53,6 @@ export default function AdminPage() {
 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -51,7 +65,7 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "urge003") {
+    if (password === "admin@urgerelief99012") {
       setIsAuthenticated(true);
       fetchData();
     } else {
@@ -62,6 +76,15 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 1. Fetch Users (Needed to calculate 0-time usage)
+      const userSnapshot = await getDocs(collection(db, "users"));
+      const userData: UserData[] = [];
+      userSnapshot.forEach((docSnap) => {
+        userData.push({ id: docSnap.id, ...docSnap.data() } as UserData);
+      });
+      setUsers(userData);
+
+      // 2. Fetch Reflections
       const refSnapshot = await getDocs(collection(db, "reflections"));
       const refData: ReflectionData[] = [];
       refSnapshot.forEach((docSnap) => {
@@ -69,6 +92,7 @@ export default function AdminPage() {
       });
       setReflections(refData);
 
+      // 3. Fetch Audio Sessions
       const audioSnapshot = await getDocs(collection(db, "audio_sessions"));
       const audioData: AudioSessionData[] = [];
       audioSnapshot.forEach((docSnap) => {
@@ -91,9 +115,8 @@ export default function AdminPage() {
       return;
     }
 
-    const friendlyName = collectionName === "reflections" ? "Reflections" : "Audio Sessions";
     const confirmDelete = window.confirm(
-      `⚠️ WARNING: Are you sure you want to permanently delete all ${dataToClear.length} ${friendlyName}? This action cannot be undone.`
+      `⚠️ WARNING: Are you sure you want to permanently delete all ${dataToClear.length} records? This action cannot be undone.`
     );
 
     if (!confirmDelete) return;
@@ -105,7 +128,7 @@ export default function AdminPage() {
       for (const item of dataToClear) {
         await deleteDoc(doc(db, collectionName, item.id));
       }
-      alert(`Successfully deleted all ${friendlyName}.`);
+      alert(`Successfully deleted all records.`);
       await fetchData(); 
     } catch (error) {
       console.error(`Error deleting ${collectionName}:`, error);
@@ -138,6 +161,8 @@ export default function AdminPage() {
   }
 
   // --- DATA PROCESSING ---
+
+  // 1. Basic Stats
   const total = reflections.length;
   const intensityMap = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let totalIntensitySum = 0;
@@ -161,20 +186,122 @@ export default function AdminPage() {
   
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
   const avgDropoffTimeStr = droppedSessions.length > 0 ? formatTime(avgDropoffSeconds) : "0:00";
+  const avgIntensity = total > 0 ? (totalIntensitySum / total).toFixed(1) : "0";
 
-  // Chart 1: Intensity
+  // 2. ADVANCED METRICS: Audio Frequency, Time Distribution, and Retention
+  
+  // Helper to normalize dates for retention calculation (strips time)
+  const getDayOnly = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+  const userAudioCounts: Record<string, number> = {};
+  const userSessionsByDate: Record<string, Date[]> = {};
+  const timeBlocks = { "Morning (6-12)": 0, "Afternoon (12-18)": 0, "Evening (18-24)": 0, "Night (0-6)": 0 };
+
+  // Track all unique users (from users collection + fallback to session ids)
+  const allKnownUserIds = new Set<string>();
+  users.forEach(u => allKnownUserIds.add(u.id));
+
+  audioSessions.forEach(session => {
+    const uid = session.userId || "anonymous"; 
+    allKnownUserIds.add(uid);
+
+    // Only count sessions where user listened for > 10 seconds
+    const isMeaningfulSession = session.timeListened > 10;
+    
+    if (isMeaningfulSession) {
+      userAudioCounts[uid] = (userAudioCounts[uid] || 0) + 1;
+    }
+
+    if (session.timestamp) {
+      const date = session.timestamp.toDate ? session.timestamp.toDate() : new Date(session.timestamp);
+      
+      // Time of Day aggregation
+      const hour = date.getHours();
+      if (hour >= 6 && hour < 12) timeBlocks["Morning (6-12)"]++;
+      else if (hour >= 12 && hour < 18) timeBlocks["Afternoon (12-18)"]++;
+      else if (hour >= 18) timeBlocks["Evening (18-24)"]++;
+      else timeBlocks["Night (0-6)"]++;
+
+      // Retention Tracking Array
+      if (!userSessionsByDate[uid]) userSessionsByDate[uid] = [];
+      userSessionsByDate[uid].push(date);
+    }
+  });
+
+  // Calculate Metric 1: Usage Frequency
+  let count0 = 0, count1to2 = 0, count3Plus = 0;
+  
+  allKnownUserIds.forEach(uid => {
+    const count = userAudioCounts[uid] || 0;
+    if (count === 0) count0++;
+    else if (count <= 2) count1to2++;
+    else count3Plus++;
+  });
+
+  const totalKnownUsers = allKnownUserIds.size || 1; // prevent div by zero
+  const freqData = [
+    { name: '0 Times', value: Math.round((count0 / totalKnownUsers) * 100), count: count0 },
+    { name: '1-2 Times', value: Math.round((count1to2 / totalKnownUsers) * 100), count: count1to2 },
+    { name: '3+ Times', value: Math.round((count3Plus / totalKnownUsers) * 100), count: count3Plus }
+  ];
+
+  // Calculate Metric 2: Time of Day Distribution
+  const timeOfDayData = Object.keys(timeBlocks).map(key => ({
+    time: key,
+    sessions: timeBlocks[key as keyof typeof timeBlocks]
+  }));
+
+  // Calculate Metric 3: Retention (Day 0 & Day 1, Day 0 to 7)
+  let eligibleForDay1 = 0;
+  let retainedDay1 = 0;
+  let eligibleForDay7 = 0;
+  let retainedDay7 = 0;
+
+  Object.values(userSessionsByDate).forEach(dates => {
+    if (dates.length === 0) return;
+    
+    // Sort to find Day 0
+    dates.sort((a, b) => a.getTime() - b.getTime());
+    const day0Time = getDayOnly(dates[0]);
+    const now = getDayOnly(new Date());
+    
+    // Days elapsed since the user's first ever session
+    const daysSinceStart = (now - day0Time) / (1000 * 3600 * 24);
+
+    // Calculate Day 1 Retention
+    if (daysSinceStart >= 1) {
+      eligibleForDay1++;
+      const hasDay1 = dates.some(d => ((getDayOnly(d) - day0Time) / (1000 * 3600 * 24)) === 1);
+      if (hasDay1) retainedDay1++;
+    }
+
+    // Calculate Day 1 to 7 Retention
+    if (daysSinceStart >= 7) {
+      eligibleForDay7++;
+      const hasDay1to7 = dates.some(d => {
+        const diffDays = (getDayOnly(d) - day0Time) / (1000 * 3600 * 24);
+        return diffDays >= 1 && diffDays <= 7;
+      });
+      if (hasDay1to7) retainedDay7++;
+    }
+  });
+
+  const day1RetentionRate = eligibleForDay1 > 0 ? Math.round((retainedDay1 / eligibleForDay1) * 100) : 0;
+  const day7RetentionRate = eligibleForDay7 > 0 ? Math.round((retainedDay7 / eligibleForDay7) * 100) : 0;
+
+
+  // --- CHARTS PREPARATION ---
+  
   const intensityChartData = [1, 2, 3, 4, 5].map(level => ({
     name: `Lvl ${level}`,
     count: intensityMap[level as keyof typeof intensityMap],
   }));
 
-  // Chart 2: Resolution
   const resolutionChartData = [
     { name: 'Fresh', value: startingFresh },
     { name: 'Good', value: goingGood }
   ];
 
-  // Chart 3: Audio Drop-off Timeline
   const dropoffBuckets = { "< 15s": 0, "15-30s": 0, "30-60s": 0, "1-2m": 0, "2m+": 0 };
   droppedSessions.forEach(s => {
     const t = s.timeListened || 0;
@@ -184,12 +311,11 @@ export default function AdminPage() {
     else if (t <= 120) dropoffBuckets["1-2m"]++;
     else dropoffBuckets["2m+"]++;
   });
+  
   const dropoffTimelineData = Object.keys(dropoffBuckets).map(key => ({
     time: key,
     dropoffs: dropoffBuckets[key as keyof typeof dropoffBuckets]
   }));
-
-  const avgIntensity = total > 0 ? (totalIntensitySum / total).toFixed(1) : "0";
 
   // Custom Tooltips
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -197,7 +323,7 @@ export default function AdminPage() {
       return (
         <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50 text-sm font-medium">
           <p className="text-slate-400 mb-1">{label}</p>
-          <p className="font-bold text-lg">{payload[0].value} Sessions</p>
+          <p className="font-bold text-lg">{payload[0].value} {payload[0].dataKey === 'value' && payload[0].payload.name?.includes('Times') ? '%' : 'Sessions'}</p>
         </div>
       );
     }
@@ -229,7 +355,7 @@ export default function AdminPage() {
               </div>
               Analytics Dashboard
             </h1>
-            <p className="text-slate-500 font-medium text-sm sm:text-base mt-2 ml-13">Real-time engagement & urge relief metrics</p>
+            <p className="text-slate-500 font-medium text-sm sm:text-base mt-2 md:ml-13">Real-time engagement & urge relief metrics</p>
           </div>
           
           <div className="flex flex-row w-full md:w-auto gap-3 items-center">
@@ -298,38 +424,50 @@ export default function AdminPage() {
           </div>
         ) : (
           <>
-            {/* KPI Summary Cards - 5 Column Grid on Desktop, 2 on Mobile */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-5">
-              
-              <div className="bg-white hover:bg-slate-50 transition-colors p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
+            {/* NEW RETENTION KPI CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 sm:p-6 rounded-[2rem] shadow-lg shadow-slate-900/10 flex flex-col gap-4 group text-white">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Hash className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 text-blue-300" />
                   </div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Ref</p>
+                  <p className="text-slate-300 font-bold text-xs uppercase tracking-wider">Total Users</p>
                 </div>
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{total}</p>
+                  <p className="text-3xl sm:text-4xl font-black">{totalKnownUsers}</p>
                 </div>
               </div>
 
-              <div className="bg-white hover:bg-slate-50 transition-colors p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
+              <div className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Activity className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-blue-500" />
                   </div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Avg Intensity</p>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Day 1 Retention</p>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{avgIntensity}</p>
-                  <p className="text-sm font-bold text-slate-400">/ 5</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{day1RetentionRate}%</p>
+                  <p className="text-xs font-bold text-slate-400">of {eligibleForDay1} eligible</p>
                 </div>
               </div>
 
-              <div className="col-span-2 md:col-span-1 bg-white hover:bg-slate-50 transition-colors p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
+              <div className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Target className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Day 1-7 Retention</p>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{day7RetentionRate}%</p>
+                  <p className="text-xs font-bold text-slate-400">of {eligibleForDay7} eligible</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                    <Target className="w-5 h-5 text-emerald-500" />
                   </div>
                   <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Success Rate</p>
                 </div>
@@ -337,41 +475,84 @@ export default function AdminPage() {
                   <p className="text-3xl sm:text-4xl font-black text-slate-800">{total > 0 ? Math.round((goingGood / total) * 100) : 0}%</p>
                 </div>
               </div>
-
-              <div className="bg-white hover:bg-slate-50 transition-colors p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <TrendingDown className="w-5 h-5" />
-                  </div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Drop-off Rate</p>
-                </div>
-                <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{dropoffRate}%</p>
-                </div>
-              </div>
-
-              <div className="bg-white hover:bg-slate-50 transition-colors p-5 sm:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Avg Leave</p>
-                </div>
-                <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-800">{avgDropoffTimeStr}</p>
-                </div>
-              </div>
-
             </div>
 
-            {/* Charts Section - Row 1 (Split) */}
+            {/* NEW CHARTS SECTION: Audio Usage Frequency & Time of Day */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+              
+              {/* Frequency Pie Chart */}
+              <div className="bg-white p-5 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col">
+                <div className="mb-8">
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Audio Usage Frequency</h2>
+                  <p className="text-slate-500 font-medium text-sm mt-1">Percentage of users based on total meaningful listens (&gt;10s).</p>
+                </div>
+                <div className="flex-1 min-h-[250px] w-full flex items-center justify-center relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={freqData}
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                        cornerRadius={8}
+                      >
+                        {freqData.map((entry, index) => (
+                          <PieCell key={`cell-${index}`} fill={FREQUENCY_COLORS[index % FREQUENCY_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36} 
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: '13px', fontWeight: 600 }}
+                        formatter={(value, entry: any) => <span className="text-slate-700 ml-1.5">{value} ({entry.payload.count} users)</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Time of Day Distribution */}
+              <div className="bg-white p-5 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col">
+                <div className="mb-8">
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Time of Day Engagement</h2>
+                  <p className="text-slate-500 font-medium text-sm mt-1">When users are activating audio sessions.</p>
+                </div>
+                <div className="flex-1 min-h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={timeOfDayData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontWeight: 600, fontSize: 11 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 500, fontSize: 12 }} />
+                      <Tooltip cursor={{ fill: '#f8fafc', radius: 12 }} content={<CustomTooltip />} />
+                      <Bar dataKey="sessions" radius={[12, 12, 12, 12]} maxBarSize={50}>
+                        {timeOfDayData.map((entry, index) => (
+                          <BarCell key={`cell-${index}`} fill={TIME_BLOCK_COLORS[index % TIME_BLOCK_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Original Charts Section - Row 1 (Split) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
               
               {/* Intensity Bar Chart */}
               <div className="bg-white p-5 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col">
-                <div className="mb-8">
-                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Intensity Distribution</h2>
-                  <p className="text-slate-500 font-medium text-sm mt-1">Reported urge rating (1-5) post-session.</p>
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Intensity Distribution</h2>
+                    <p className="text-slate-500 font-medium text-sm mt-1">Reported urge rating (1-5) post-session.</p>
+                  </div>
+                  <div className="bg-blue-50 px-3 py-1 rounded-lg text-blue-600 font-bold text-sm">
+                    Avg: {avgIntensity}
+                  </div>
                 </div>
                 <div className="flex-1 min-h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -432,11 +613,23 @@ export default function AdminPage() {
               <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                <Headphones className="w-48 h-48" />
               </div>
-              <div className="mb-8 relative z-10">
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">Audio Retention Curve</h2>
-                <p className="text-slate-500 font-medium text-sm mt-1 max-w-lg">
-                  Visualizes exactly when users are exiting the audio therapy early. Spikes indicate common friction points where users lose focus.
-                </p>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 relative z-10 gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Audio Retention Curve</h2>
+                  <p className="text-slate-500 font-medium text-sm mt-1 max-w-lg">
+                    Visualizes exactly when users are exiting the audio therapy early. Spikes indicate common friction points where users lose focus.
+                  </p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="text-right">
+                    <p className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-1">Drop-off Rate</p>
+                    <p className="text-2xl font-black text-slate-800">{dropoffRate}%</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-1">Avg Leave Time</p>
+                    <p className="text-2xl font-black text-slate-800">{avgDropoffTimeStr}</p>
+                  </div>
+                </div>
               </div>
               
               <div className="flex-1 min-h-[300px] sm:min-h-[350px] w-full relative z-10">
