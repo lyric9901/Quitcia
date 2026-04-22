@@ -67,8 +67,7 @@ export default function Onboarding() {
           name: formData.name,
         }, { merge: true });
       }
-      
-      // 3. Redirect to dashboard immediately without waiting for sheets!
+    
       router.push("/dashboard");
       
     } catch (error) {
