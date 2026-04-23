@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import InstallPopup from '@/components/InstallPopup';
+import MobileFullscreen from '@/components/MobileFullscreen';
 import OfflineManager from "@/components/OfflineManager";
 
 import { PostHogProvider } from "@/providers/PostHogProvider";
@@ -101,6 +102,9 @@ export default function RootLayout({
         
         {/* Render the PWA Install Popup globally */}
         <InstallPopup />
+
+        {/* Android-only: request fullscreen on first tap to hide browser chrome */}
+        <MobileFullscreen />
         
         <Analytics />
       </body>

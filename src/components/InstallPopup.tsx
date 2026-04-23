@@ -3,41 +3,88 @@
 import { useEffect, useState } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
+type Mode = 'desktop' | 'mobile';
+
 export default function InstallPopup() {
   const [showPopup, setShowPopup] = useState(false);
+  const [mode, setMode] = useState<Mode>('desktop');
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    // Check if the user already dismissed it in this session to avoid annoying them
-    const hasDismissed = sessionStorage.getItem('installPromptDismissed');
-    if (!hasDismissed) {
+    if (typeof window === 'undefined') return;
+
+    if (window.matchMedia?.('(display-mode: standalone)').matches) return;
+    if (sessionStorage.getItem('installPromptDismissed')) return;
+
+    const ua = navigator.userAgent || '';
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+      window.matchMedia?.('(pointer: coarse)').matches;
+
+    if (!isMobile) {
+      setMode('desktop');
       setShowPopup(true);
+      return;
     }
+
+    setMode('mobile');
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowPopup(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt);
   }, []);
 
-  const handleInstall = () => {
-    // URL to the base.apk file
-    const apkUrl = 'https://pub-978950eef49c492085cdafeca0b26f00.r2.dev/base.apk';
+  const handleInstall = async () => {
+    if (mode === 'desktop') {
+      const apkUrl = 'https://pub-978950eef49c492085cdafeca0b26f00.r2.dev/base.apk';
+      const link = document.createElement('a');
+      link.href = apkUrl;
+      link.download = 'UrgeRelief.apk';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowPopup(false);
+      return;
+    }
 
-    // Create an invisible anchor element to trigger the download
-    const link = document.createElement('a');
-    link.href = apkUrl;
-    link.download = 'UrgeRelief.apk'; // Suggests a filename for the download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!deferredPrompt) {
+      setShowPopup(false);
+      return;
+    }
 
-    // Hide the popup after initiating the download
-    setShowPopup(false);
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    } catch {
+      // Ignore: user dismissed or browser blocked the prompt
+    } finally {
+      setDeferredPrompt(null);
+      setShowPopup(false);
+    }
   };
 
   const handleDismiss = () => {
     setShowPopup(false);
-    // Save to session storage so it doesn't pop up again until they close and reopen the browser
     sessionStorage.setItem('installPromptDismissed', 'true');
   };
 
-  // Do not render anything if the popup shouldn't be shown
   if (!showPopup) return null;
+
+  const body =
+    mode === 'desktop'
+      ? "This app isn’t on the Play Store yet. Download the APK by clicking on button below to get early access Note: if you see any popup inside the app, just ignore it and use the app as normal."
+      : 'Install Urge Relief to your home screen for a distraction-free, fullscreen experience — no browser bar.';
+  const ctaLabel = mode === 'desktop' ? 'Download APK' : 'Install App';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -62,8 +109,7 @@ export default function InstallPopup() {
         </h3>
 
         <p className="text-sm text-gray-500 mb-6">
-          This app isn’t on the Play Store yet. Download the APK by clicking on button below to get early access
-          Note: if you see any popup inside the app, just ignore it and use the app as normal.
+          {body}
         </p>
 
         {/* Action Buttons */}
@@ -73,7 +119,7 @@ export default function InstallPopup() {
             className="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-[0.98]"
           >
             <Download className="w-5 h-5" />
-            Download APK
+            {ctaLabel}
           </button>
 
           <button
