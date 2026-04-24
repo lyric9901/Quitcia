@@ -11,13 +11,21 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true, 
+    unoptimized: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/assetlinks.json",
+        destination: "/assetlinks.json",
+      },
+    ];
   },
 };
 
