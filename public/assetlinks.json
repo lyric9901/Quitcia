@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.urge_relief.twa",
+      "sha256_cert_fingerprints": [
+        "A4:33:F2:A7:10:C0:6B:97:79:30:45:AE:BA:7B:B6:42:E4:7F:F5:31:1D:7B:0B:B1:DB:FF:55:5E:24:A6:21:AB"
+      ]
+    }
+  }
+]
