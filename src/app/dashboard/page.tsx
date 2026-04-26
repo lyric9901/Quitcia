@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { Wind, User, X, Check } from "lucide-react";
+import { collection, addDoc, serverTimestamp, getDocs, doc, getDoc, updateDoc, query, where } from "firebase/firestore";
+import { User, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import FeedbackScreen from "@/components/FeedbackScreen";
 import { usePostHog } from 'posthog-js/react';
 
 const TASKS = [
@@ -187,17 +188,34 @@ const OrbModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
+
 export default function DashboardPage() {
   const router = useRouter();
   const posthog = usePostHog();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeModal, setActiveModal] = useState<"none" | "orb" | "reflection">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "orb" | "reflection" | "feedback">("none");
   const [dailyTasks, setDailyTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) { router.push("/"); return; }
       setIsLoading(false);
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (!userDoc.data()?.feedbackShown) {
+          const q = query(
+            collection(db, "users", currentUser.uid, "swm_sessions"),
+            where("type", "==", "SWM_milestone_60s")
+          );
+          const snap = await getDocs(q);
+          if (snap.size >= 6) {
+            setActiveModal("feedback");
+          }
+        }
+      } catch (e) {
+        console.error("Feedback trigger check failed", e);
+      }
     });
 
     const storedDate = localStorage.getItem("taskDate");
@@ -236,6 +254,17 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleFeedbackClose = async () => {
+    setActiveModal("none");
+    if (auth.currentUser) {
+      try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { feedbackShown: true });
+      } catch (e) {
+        console.error("Error marking feedback as shown", e);
+      }
+    }
+  };
+
   const completeTask = (taskId: number) => {
     setDailyTasks(prev => {
       const isAlreadyCompleted = prev.find(t => t.id === taskId)?.completed;
@@ -264,7 +293,6 @@ export default function DashboardPage() {
     const lastAudioDurationStr = localStorage.getItem("lastAudioListenedDuration");
 
     if (lastAudioTime && lastAudioDurationStr) {
-      const timeElapsed = Date.now() - parseInt(lastAudioTime, 10);
       const timeListened = parseInt(lastAudioDurationStr, 10);
       
       // Changed && to || so it bypasses if EITHER condition is true
@@ -342,6 +370,7 @@ export default function DashboardPage() {
       <AnimatePresence>
         {activeModal === "orb" && <OrbModal onClose={() => setActiveModal("none")} />}
         {activeModal === "reflection" && <ReflectionModal onClose={() => setActiveModal("none")} />}
+        {activeModal === "feedback" && <FeedbackScreen onClose={handleFeedbackClose} />}
       </AnimatePresence>
     </main>
   );
