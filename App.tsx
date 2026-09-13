@@ -16,6 +16,7 @@ import {
   getItemSync,
   setItemSync,
 } from './src/lib/localStore';
+import { initializeAdMob } from './src/lib/admob';
 
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -33,6 +34,7 @@ export default function App() {
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
 
   useEffect(() => {
+    initializeAdMob();
     initLocalStorage().then(() => {
       const profile = getUserProfile();
       const savedTheme = getItemSync('theme_mode') as ThemeMode | null;

@@ -92,18 +92,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigate, curren
   const [showSimulatedAd, setShowSimulatedAd] = useState(false);
   const [adCountdown, setAdCountdown] = useState(5);
   const [showRewardSuccessModal, setShowRewardSuccessModal] = useState(false);
-  const { showAd, isNativeAvailable } = useRewardedInterstitial();
+  const { showAd, isNativeAvailable, isLoaded, isLoading, reloadAd } = useRewardedInterstitial();
 
   const handleWatchAdForGem = () => {
     if (isNativeAvailable) {
       setIsAdWatching(true);
-      showAd(() => {
-        const nextGems = addGem(1);
-        setGems(nextGems);
-        setIsAdWatching(false);
-        setShowRewardSuccessModal(true);
-      });
-      setTimeout(() => setIsAdWatching(false), 3000);
+      showAd(
+        () => {
+          const nextGems = addGem(1);
+          setGems(nextGems);
+          setIsAdWatching(false);
+          setShowRewardSuccessModal(true);
+        },
+        () => {
+          setIsAdWatching(false);
+          setAdCountdown(5);
+          setShowSimulatedAd(true);
+        }
+      );
+      setTimeout(() => setIsAdWatching(false), 3500);
     } else {
       // In Expo Go or preview, play the simulated full-screen sponsored video ad
       setAdCountdown(5);
