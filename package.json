@@ -9,6 +9,7 @@
     "arg": "^5.0.2",
     "expo": "~57.0.22",
     "expo-application": "~57.0.3",
+    "expo-asset": "~57.0.17",
     "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.3",
     "expo-build-properties": "~57.0.17",
@@ -25,7 +26,7 @@
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
-    "react-native-google-mobile-ads": "^16.5.0",
+    "react-native-google-mobile-ads": "16.3.4",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4"
