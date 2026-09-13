@@ -12,7 +12,6 @@ interface AudioScreenProps {
 }
 
 const AUDIO_TRACK_FILES = [
-  require('../../assets/audio/urge-surfing.mp3'),
   require('../../assets/audio/track1.mp3'),
   require('../../assets/audio/track2.mp3'),
   require('../../assets/audio/track3.mp3'),
